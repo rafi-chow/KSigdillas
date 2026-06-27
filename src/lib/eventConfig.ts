@@ -1,0 +1,82 @@
+export const eventConfig = {
+  name: "KSigdillas",
+  organization: "Kappa Sigma Theta-Omega",
+  date: "Date to be announced",
+  dayAndTime: "Friday · 6:00 PM",
+  venue: "707 S Davis Dr",
+  venueNote: "Backyard location",
+  ticketUrl:
+    process.env.NEXT_PUBLIC_EVENTBRITE_URL ??
+    "https://www.eventbrite.com/e/ksigdillas-tickets-placeholder",
+  instagramUrl:
+    process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://instagram.com/placeholder",
+  instagramHandle: "@ksigdillas",
+  contactEmail:
+    process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "ksigdillas@example.com",
+  beneficiaryConfirmed: false,
+  proceedsPercentageEnabled: false,
+} as const;
+
+export const ticketTiers = [
+  {
+    name: "Basicdilla",
+    label: "The classic",
+    color: "yellow",
+    features: [
+      "Backyard event access",
+      "Free sodas",
+      "Unlimited cheese quesadillas while supplies last",
+    ],
+  },
+  {
+    name: "Chicken + Veggie",
+    label: "More on the menu",
+    color: "orange",
+    featured: true,
+    features: [
+      "Everything in Basicdilla",
+      "Chicken quesadilla options",
+      "Veggie quesadilla options",
+    ],
+  },
+  {
+    name: "Beef Tier",
+    label: "The full spread",
+    color: "red",
+    features: [
+      "Everything in previous tiers",
+      "Beef quesadilla access",
+      "Every available filling option",
+    ],
+  },
+] as const;
+
+export const leaderboardData = [
+  {
+    rank: 1,
+    chapter: "Alpha Chapter",
+    initials: "Α",
+    volleyball: 120,
+    eating: 90,
+    support: 145,
+    total: 355,
+  },
+  {
+    rank: 2,
+    chapter: "Beta Chapter",
+    initials: "Β",
+    volleyball: 100,
+    eating: 115,
+    support: 110,
+    total: 325,
+  },
+  {
+    rank: 3,
+    chapter: "Gamma Chapter",
+    initials: "Γ",
+    volleyball: 90,
+    eating: 80,
+    support: 125,
+    total: 295,
+  },
+] as const;
