@@ -2055,10 +2055,131 @@ footer {
 }
 
 .admin-score-section,
-.admin-team-editor {
+.admin-team-editor,
+.admin-eventbrite-section {
   padding: 38px;
   border: 1px solid #d5cabe;
   background: var(--paper);
+}
+
+.admin-eventbrite-section {
+  margin-bottom: 35px;
+  border-top: 4px solid var(--red);
+}
+
+.eventbrite-sync-grid {
+  display: grid;
+  align-items: center;
+  gap: 35px;
+  padding: 24px;
+  background: var(--cream);
+  grid-template-columns: 1fr auto;
+}
+
+.eventbrite-sync-copy {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+
+.eventbrite-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid var(--ink);
+  background: var(--cheese);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.eventbrite-icon svg {
+  width: 24px;
+}
+
+.eventbrite-sync-copy > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.eventbrite-sync-copy strong {
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.eventbrite-sync-copy p,
+.eventbrite-manual-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.eventbrite-sync-copy code {
+  padding: 2px 4px;
+  background: #e9dfd2;
+  color: var(--red);
+  font-size: 9px;
+}
+
+.eventbrite-sync-button {
+  min-width: 230px;
+  cursor: pointer;
+}
+
+.eventbrite-sync-button svg {
+  width: 15px;
+}
+
+.eventbrite-sync-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.eventbrite-sync-results {
+  display: grid;
+  gap: 18px 10px;
+  padding: 22px 24px;
+  border: 1px solid #ded4c9;
+  border-top: 0;
+  grid-template-columns: 1.4fr repeat(4, 1fr);
+}
+
+.eventbrite-sync-results > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 10px;
+  border-right: 1px solid #e6ddd4;
+}
+
+.eventbrite-sync-results > div:nth-child(5) {
+  border-right: 0;
+}
+
+.eventbrite-sync-results span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.eventbrite-sync-results strong {
+  font-size: 14px;
+}
+
+.eventbrite-sync-results p {
+  margin: 0;
+  color: var(--red);
+  font-size: 10px;
+  line-height: 1.5;
+  grid-column: 1 / -1;
+}
+
+.eventbrite-manual-note {
+  margin-top: 15px;
 }
 
 .admin-section-heading {
@@ -2858,7 +2979,8 @@ footer {
   }
 
   .admin-score-section,
-  .admin-team-editor {
+  .admin-team-editor,
+  .admin-eventbrite-section {
     margin-right: -14px;
     margin-left: -14px;
     padding: 27px 14px;
@@ -2894,6 +3016,24 @@ footer {
 
   .admin-team-editor form {
     grid-template-columns: 1fr;
+  }
+
+  .eventbrite-sync-grid {
+    align-items: stretch;
+    padding: 20px 15px;
+    grid-template-columns: 1fr;
+  }
+
+  .eventbrite-sync-button {
+    width: 100%;
+  }
+
+  .eventbrite-sync-results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .eventbrite-sync-results > div {
+    border-right: 0;
   }
 
   .team-form-actions {

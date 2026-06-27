@@ -40,6 +40,12 @@ export const scoreUpdateLimits = {
   max: 10_000,
 } as const;
 
+export const eventbriteTicketTierPoints = {
+  Basicdilla: 1,
+  "Chicken + Veggie": 2,
+  "Beef Tier": 3,
+} as const;
+
 export function calculateTotalPoints(
   team: Pick<Team, ScoreCategory>,
 ): number {

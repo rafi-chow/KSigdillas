@@ -18,9 +18,14 @@ import {
   RefreshCw,
   Save,
   ShieldCheck,
+  TicketCheck,
   TriangleAlert,
 } from "lucide-react";
 import { scoringConfig } from "@/lib/scoringConfig";
+import type {
+  EventbriteSyncReport,
+  EventbriteSyncStatus,
+} from "@/types/eventbrite";
 import {
   scoreCategories,
   type LeaderboardResponse,
@@ -63,12 +68,21 @@ export function AdminLeaderboard() {
   const [deltas, setDeltas] = useState<Record<string, string>>({});
   const [teamForm, setTeamForm] = useState<TeamInput>(blankTeam);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [eventbriteStatus, setEventbriteStatus] =
+    useState<EventbriteSyncStatus | null>(null);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState<Notice>(null);
 
   const loadTeams = useCallback(async () => {
     const data = await apiRequest<LeaderboardResponse>("/api/leaderboard");
     setTeams(data.teams);
+  }, []);
+
+  const loadEventbriteStatus = useCallback(async () => {
+    const data = await apiRequest<EventbriteSyncStatus>(
+      "/api/admin/eventbrite-sync",
+    );
+    setEventbriteStatus(data);
   }, []);
 
   useEffect(() => {
@@ -78,11 +92,13 @@ export function AdminLeaderboard() {
       .then((result) => {
         setAuthenticated(result.authenticated);
         setConfigured(result.configured);
-        if (result.authenticated) return loadTeams();
+        if (result.authenticated) {
+          return Promise.all([loadTeams(), loadEventbriteStatus()]);
+        }
       })
       .catch(() => setNotice({ type: "error", text: "Could not check admin access." }))
       .finally(() => setAuthLoading(false));
-  }, [loadTeams]);
+  }, [loadEventbriteStatus, loadTeams]);
 
   const sortedTeams = useMemo(
     () =>
@@ -243,6 +259,44 @@ export function AdminLeaderboard() {
     }
   }
 
+  async function syncEventbrite() {
+    setBusy("eventbrite");
+    setNotice(null);
+    try {
+      const result = await apiRequest<{
+        report: EventbriteSyncReport;
+        message: string;
+      }>("/api/admin/eventbrite-sync", {
+        method: "POST",
+        body: "{}",
+      });
+      setEventbriteStatus((current) => ({
+        config: current?.config ?? {
+          enabled: true,
+          configured: true,
+          eventId: result.report.eventId,
+          question: null,
+          minSeconds: 60,
+          missingVariables: [],
+        },
+        lastSync: result.report,
+      }));
+      await loadTeams();
+      setNotice({ type: "success", text: result.message });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Unable to sync Eventbrite.",
+      });
+      await loadEventbriteStatus().catch(() => undefined);
+    } finally {
+      setBusy("");
+    }
+  }
+
   if (authLoading) {
     return (
       <main className="admin-page admin-loading">
@@ -343,6 +397,115 @@ export function AdminLeaderboard() {
             <button type="button" onClick={() => setNotice(null)}>×</button>
           </div>
         )}
+
+        <section className="admin-eventbrite-section">
+          <div className="admin-section-heading">
+            <span>EB</span>
+            <div>
+              <h2>EVENTBRITE TICKETS</h2>
+              <p>Replace ticket-support points from aggregated attendee answers.</p>
+            </div>
+          </div>
+          <div className="eventbrite-sync-grid">
+            <div className="eventbrite-sync-copy">
+              <span className="eventbrite-icon"><TicketCheck /></span>
+              <div>
+                <strong>
+                  {eventbriteStatus?.config.configured
+                    ? "Ready to sync"
+                    : "Manual scoring active"}
+                </strong>
+                {!eventbriteStatus?.config.enabled ? (
+                  <p>
+                    Eventbrite sync is disabled. Set{" "}
+                    <code>EVENTBRITE_SYNC_ENABLED=true</code> and configure{" "}
+                    <code>EVENTBRITE_PRIVATE_TOKEN</code>.
+                  </p>
+                ) : eventbriteStatus.config.missingVariables.length > 0 ? (
+                  <p>
+                    Missing server configuration:{" "}
+                    {eventbriteStatus.config.missingVariables.join(", ")}.
+                  </p>
+                ) : (
+                  <p>
+                    Event {eventbriteStatus.config.eventId} · Minimum{" "}
+                    {eventbriteStatus.config.minSeconds}s between syncs
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="button button-dark eventbrite-sync-button"
+              onClick={syncEventbrite}
+              disabled={
+                busy === "eventbrite" ||
+                !eventbriteStatus?.config.configured
+              }
+            >
+              <RefreshCw
+                className={busy === "eventbrite" ? "is-spinning" : ""}
+              />
+              {busy === "eventbrite"
+                ? "Syncing…"
+                : "Sync Eventbrite Tickets"}
+            </button>
+          </div>
+          {eventbriteStatus?.lastSync && (
+            <div className="eventbrite-sync-results">
+              <div>
+                <span>Last synced</span>
+                <strong>
+                  {new Date(
+                    eventbriteStatus.lastSync.syncedAt,
+                  ).toLocaleString()}
+                </strong>
+              </div>
+              <div>
+                <span>Tickets counted</span>
+                <strong>{eventbriteStatus.lastSync.ticketsCounted}</strong>
+              </div>
+              <div>
+                <span>Points awarded</span>
+                <strong>{eventbriteStatus.lastSync.pointsAwarded}</strong>
+              </div>
+              <div>
+                <span>Skipped attendees</span>
+                <strong>{eventbriteStatus.lastSync.skippedAttendees}</strong>
+              </div>
+              <div>
+                <span>Unmatched answers</span>
+                <strong>
+                  {eventbriteStatus.lastSync.unmatchedTeamAnswers.reduce(
+                    (total, item) => total + item.count,
+                    0,
+                  )}
+                </strong>
+              </div>
+              {eventbriteStatus.lastSync.unmatchedTeamAnswers.length > 0 && (
+                <p>
+                  Review:{" "}
+                  {eventbriteStatus.lastSync.unmatchedTeamAnswers
+                    .map((item) => `${item.answer} (${item.count})`)
+                    .join(", ")}
+                </p>
+              )}
+              {eventbriteStatus.lastSync.unmatchedTicketTiers.length > 0 && (
+                <p>
+                  Unmapped ticket tiers:{" "}
+                  {eventbriteStatus.lastSync.unmatchedTicketTiers
+                    .map((item) => `${item.ticketTier} (${item.count})`)
+                    .join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="eventbrite-manual-note">
+            A sync replaces only Ticket points. Manual adjustments remain
+            available, and Volleyball, Eating, Donations, and Bonus points are
+            never overwritten.
+          </p>
+        </section>
 
         <section className="admin-score-section">
           <div className="admin-section-heading">

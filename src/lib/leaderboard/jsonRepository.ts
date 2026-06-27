@@ -158,6 +158,31 @@ export class JsonLeaderboardRepository implements LeaderboardRepository {
     });
   }
 
+  async replaceTicketPoints(pointsByTeamId: Record<string, number>) {
+    return this.mutate(async () => {
+      const teams = await this.read();
+      const now = new Date().toISOString();
+      const updatedTeams = teams.map((team) => {
+        const ticketPoints = pointsByTeamId[team.id] ?? 0;
+        if (!Number.isSafeInteger(ticketPoints) || ticketPoints < 0) {
+          throw new Error(`Invalid Eventbrite ticket points for ${team.id}.`);
+        }
+        if (team.ticketPoints === ticketPoints) return team;
+
+        const updated = {
+          ...team,
+          ticketPoints,
+          lastUpdated: now,
+        };
+        updated.totalPoints = calculateTotalPoints(updated);
+        return updated;
+      });
+
+      await this.write(updatedTeams);
+      return sortTeams(updatedTeams);
+    });
+  }
+
   async resetDemoData() {
     return this.mutate(async () => {
       const now = new Date().toISOString();

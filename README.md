@@ -51,6 +51,52 @@ Totals are always recalculated on the server from the five categories. Public
 clients cannot call create, update, or reset operations without a valid admin
 session.
 
+## Eventbrite Sync Setup
+
+Eventbrite ticket-support sync is optional and disabled by default. When it is
+disabled or incompletely configured, the leaderboard continues to work with
+manual score updates.
+
+Add these values to `.env.local` for local development and to the server
+environment for deployment:
+
+```env
+NEXT_PUBLIC_EVENTBRITE_URL=https://www.eventbrite.com/e/ksigdillas-tickets-1992696425651
+EVENTBRITE_SYNC_ENABLED=true
+EVENTBRITE_EVENT_ID=1992696425651
+EVENTBRITE_PRIVATE_TOKEN=your-private-token
+EVENTBRITE_TEAM_QUESTION=Which sorority or team are you supporting?
+EVENTBRITE_SYNC_MIN_SECONDS=60
+```
+
+`EVENTBRITE_PRIVATE_TOKEN` is server-only and must never use a `NEXT_PUBLIC_`
+prefix. The application uses it only from the authenticated sync API route.
+Public leaderboard responses never include attendee names, emails, order IDs,
+or raw Eventbrite data.
+
+For accurate team matching, the answer choices for the Eventbrite question
+must match leaderboard display names. The current question is:
+`Which sorority or team are you supporting?`
+
+Ticket tiers award support points as configured in
+`src/lib/scoringConfig.ts`:
+
+| Eventbrite ticket tier | Ticket points |
+| --- | ---: |
+| Basicdilla | 1 |
+| Chicken + Veggie | 2 |
+| Beef Tier | 3 |
+
+To sync, open `/admin/leaderboard`, authenticate with `ADMIN_PASSCODE`, and
+select **Sync Eventbrite Tickets**. The result shows the last sync time,
+tickets counted, points awarded, skipped attendees, and unmatched answers.
+Sync replaces `ticketPoints` with the latest Eventbrite aggregates. Admins can
+still manually adjust ticket points between syncs, and Volleyball, Eating,
+Donation, and Bonus points remain fully manual and are never overwritten.
+
+Keep the Eventbrite event in draft/private status until the real date, prices,
+refund policy, beneficiary, and required approvals are final.
+
 ### Current storage and future database
 
 The default `JsonLeaderboardRepository` writes local data to
@@ -71,10 +117,11 @@ The API routes and both interfaces remain unchanged when the adapter changes.
 
 ## Deploying
 
-Import the repository into Vercel, then configure the four variables shown
-above in Project Settings → Environment Variables. Use a persistent repository
-adapter before relying on live scores in production. The public page needs no
-authentication; only the admin routes use `ADMIN_PASSCODE`.
+Import the repository into Vercel, then configure the public, admin, and
+Eventbrite variables shown above in Project Settings → Environment Variables.
+Use a persistent repository adapter before relying on live scores in
+production. The public page needs no authentication; only the admin routes use
+`ADMIN_PASSCODE`.
 
 ## Quality checks
 

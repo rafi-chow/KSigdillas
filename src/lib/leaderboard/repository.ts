@@ -9,5 +9,6 @@ export interface LeaderboardRepository {
   createTeam(input: TeamInput): Promise<Team>;
   updateTeam(id: string, input: TeamInput): Promise<Team>;
   updateScore(update: ScoreUpdate): Promise<Team>;
+  replaceTicketPoints(pointsByTeamId: Record<string, number>): Promise<Team[]>;
   resetDemoData(): Promise<Team[]>;
 }
