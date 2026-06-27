@@ -19,7 +19,7 @@ website.
 ## Eventbrite
 
 - [ ] Confirm Eventbrite order form collects the custom question from each attendee, not just the ticket buyer
-- [ ] Confirm final sorority list and exact answer spelling
+- [ ] Confirm final sorority list and exact answer spelling: AXO, DZ, ZTA, DDD
 - [ ] Add final Eventbrite URL to `NEXT_PUBLIC_EVENTBRITE_URL`
 - [ ] Keep the Eventbrite event draft/private until all approvals are complete
 - [ ] Test the Eventbrite ticket purchase flow with a test or hidden ticket, if possible

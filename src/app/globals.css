@@ -192,16 +192,33 @@ h2 em {
   letter-spacing: .05em;
 }
 
-.brand-mark {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 2px solid currentColor;
-  transform: rotate(-3deg);
+.ks-brand-mark {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+}
+
+.ks-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ks-brand-mark > span {
+  position: absolute;
+  right: -7px;
+  bottom: -3px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  background: var(--red);
+  color: #fff;
   font-family: Georgia, serif;
-  font-size: 19px;
+  font-size: 8px;
   font-weight: 900;
+  letter-spacing: .02em;
+  line-height: 1.1;
 }
 
 .nav-links {
@@ -1242,9 +1259,9 @@ footer {
   font-size: 10px;
 }
 
-.footer-brand .brand-mark {
-  color: #fff;
-  font-size: 18px;
+.footer-brand .ks-brand-mark {
+  width: 52px;
+  height: 52px;
 }
 
 .footer-links {
@@ -2568,10 +2585,9 @@ footer {
     font-size: 17px;
   }
 
-  .brand-mark {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+  .ks-brand-mark {
+    width: 42px;
+    height: 42px;
   }
 
   .nav-cta {

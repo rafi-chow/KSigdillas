@@ -4,6 +4,10 @@ A production-ready landing page and live competition leaderboard for Kappa
 Sigma Theta-Omega's KSigdillas philanthropy event. Built with Next.js App
 Router, TypeScript, and Tailwind CSS.
 
+The Kappa Sigma crest assets in `public/` are the unmodified official files
+provided by the [Kappa Sigma logo library](https://www.kappasigma.org/logos-icons/)
+and are paired with separate Theta-Omega chapter labeling.
+
 ## Local development
 
 ```bash
@@ -36,6 +40,8 @@ access is stored in an HttpOnly, same-site admin session cookie for eight hours.
 The leaderboard is public at
 [http://localhost:3000/leaderboard](http://localhost:3000/leaderboard) and
 refreshes every 30 seconds. Public requests use a read-only API endpoint.
+The default competition roster is AXO, DZ, ZTA, and DDD, with all categories
+reset to zero.
 
 Scorekeepers use
 [http://localhost:3000/admin/leaderboard](http://localhost:3000/admin/leaderboard):
@@ -96,6 +102,28 @@ Donation, and Bonus points remain fully manual and are never overwritten.
 
 Keep the Eventbrite event in draft/private status until the real date, prices,
 refund policy, beneficiary, and required approvals are final.
+
+## Demo Walkthrough
+
+The manual leaderboard can be demonstrated without publishing Eventbrite:
+
+1. Run `npm run dev`.
+2. Open `/leaderboard` in one browser window.
+3. Open `/admin/leaderboard` in another and enter `ADMIN_PASSCODE`.
+4. Add points to AXO, DZ, ZTA, or DDD.
+5. Refresh the public board, or wait for its 30-second automatic refresh.
+6. Use **Reset demo data** to return all four teams and categories to zero.
+
+Testing an actual Eventbrite purchase requires the event to be published so
+Eventbrite can issue a ticket. For a controlled test, publish it as a private
+event accessible only by its link and avoid publicly promoting that link.
+Complete the production checklist before accepting real purchases.
+
+Eventbrite settings can still be edited after publishing, including future
+date/time, capacity, ticket availability, and listing content. Changes affecting
+existing buyers should be communicated to them. Eventbrite only allows a
+published refund policy to become more flexible, not more restrictive, so
+confirm that policy before publishing.
 
 ### Current storage and future database
 

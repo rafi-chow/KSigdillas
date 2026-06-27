@@ -1,13 +1,14 @@
 import { ArrowDown, CalendarDays, MapPin, Ticket } from "lucide-react";
 import { eventConfig } from "@/lib/eventConfig";
 import { QuesadillaArt } from "./CheeseArt";
+import { KappaSigmaMark } from "./KappaSigmaMark";
 
 export function HeroSection() {
   return (
     <header className="hero" id="top">
       <nav className="nav shell" aria-label="Main navigation">
         <a className="brand" href="#top" aria-label="KSigdillas home">
-          <span className="brand-mark">KΣ</span>
+          <KappaSigmaMark />
           <span>KSIGDILLAS</span>
         </a>
         <div className="nav-links">

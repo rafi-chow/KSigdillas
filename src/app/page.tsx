@@ -13,6 +13,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { LeaderboardPreview } from "@/components/LeaderboardPreview";
 import { TicketTierCard } from "@/components/TicketTierCard";
 import { WristbandFlow } from "@/components/WristbandFlow";
+import { KappaSigmaMark } from "@/components/KappaSigmaMark";
 import { eventConfig, ticketTiers } from "@/lib/eventConfig";
 
 const faqs = [
@@ -166,7 +167,7 @@ export default function Home() {
       <footer>
         <div className="shell footer-grid">
           <div className="footer-brand">
-            <span className="brand-mark">KΣ</span>
+            <KappaSigmaMark />
             <div><strong>KSIGDILLAS</strong><span>{eventConfig.organization}</span></div>
           </div>
           <div className="footer-links">

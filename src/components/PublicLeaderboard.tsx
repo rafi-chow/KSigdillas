@@ -14,6 +14,7 @@ import {
   scoreCategories,
   type LeaderboardResponse,
 } from "@/types/leaderboard";
+import { KappaSigmaMark } from "@/components/KappaSigmaMark";
 
 const refreshInterval = 30_000;
 
@@ -70,7 +71,7 @@ export function PublicLeaderboard({
     <main className="public-board-page">
       <header className="board-nav shell">
         <Link href="/" className="brand">
-          <span className="brand-mark">KΣ</span>
+          <KappaSigmaMark />
           <span>KSIGDILLAS</span>
         </Link>
         <div className="board-nav-actions">

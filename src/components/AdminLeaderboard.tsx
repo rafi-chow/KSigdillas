@@ -26,6 +26,7 @@ import type {
   EventbriteSyncReport,
   EventbriteSyncStatus,
 } from "@/types/eventbrite";
+import { KappaSigmaMark } from "@/components/KappaSigmaMark";
 import {
   scoreCategories,
   type LeaderboardResponse,
@@ -362,7 +363,7 @@ export function AdminLeaderboard() {
       <header className="admin-header">
         <div className="shell">
           <div>
-            <span className="brand-mark">KΣ</span>
+            <KappaSigmaMark />
             <span><strong>KSigdillas Score Desk</strong><small>Admin controls</small></span>
           </div>
           <div>
