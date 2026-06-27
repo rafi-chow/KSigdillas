@@ -50,33 +50,3 @@ export const ticketTiers = [
     ],
   },
 ] as const;
-
-export const leaderboardData = [
-  {
-    rank: 1,
-    chapter: "Alpha Chapter",
-    initials: "Α",
-    volleyball: 120,
-    eating: 90,
-    support: 145,
-    total: 355,
-  },
-  {
-    rank: 2,
-    chapter: "Beta Chapter",
-    initials: "Β",
-    volleyball: 100,
-    eating: 115,
-    support: 110,
-    total: 325,
-  },
-  {
-    rank: 3,
-    chapter: "Gamma Chapter",
-    initials: "Γ",
-    volleyball: 90,
-    eating: 80,
-    support: 125,
-    total: 295,
-  },
-] as const;

@@ -1,8 +1,46 @@
-import { Trophy } from "lucide-react";
-import { leaderboardData } from "@/lib/eventConfig";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { ArrowRight, Trophy } from "lucide-react";
+import type { LeaderboardResponse, Team } from "@/types/leaderboard";
+
+const refreshInterval = 30_000;
+
+function teamInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
 
 export function LeaderboardPreview() {
-  const max = leaderboardData[0].total;
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>();
+
+  const refresh = useCallback(async () => {
+    try {
+      const response = await fetch("/api/leaderboard", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as LeaderboardResponse;
+      setTeams(data.teams.slice(0, 3));
+      setLastUpdated(data.lastUpdated);
+    } catch {
+      // Keep the last successful snapshot visible during a transient failure.
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialTimer = window.setTimeout(refresh, 0);
+    const timer = window.setInterval(refresh, refreshInterval);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(timer);
+    };
+  }, [refresh]);
+
+  const max = teams[0]?.totalPoints || 1;
 
   return (
     <section className="leaderboard-section section" id="leaderboard">
@@ -16,9 +54,16 @@ export function LeaderboardPreview() {
         <div className="leaderboard-card">
           <div className="leaderboard-head">
             <div>
-              <span className="live-dot" /> Preview standings
+              <span className="live-dot" /> Live standings
             </div>
-            <p>Sample data · Live updates coming soon</p>
+            <p>
+              {lastUpdated
+                ? `Updated ${new Date(lastUpdated).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}`
+                : "Loading live scores…"}
+            </p>
           </div>
           <div className="leaderboard-labels">
             <span>Rank / Chapter</span>
@@ -27,25 +72,36 @@ export function LeaderboardPreview() {
             <span>Support</span>
             <span>Total</span>
           </div>
-          {leaderboardData.map((team) => (
-            <article className="leaderboard-row" key={team.chapter}>
+          {teams.length === 0 ? (
+            <div className="leaderboard-loading">Fetching the latest standings…</div>
+          ) : teams.map((team, index) => (
+            <article className="leaderboard-row" key={team.id}>
               <div className="team-cell">
-                <span className={`rank rank-${team.rank}`}>
-                  {team.rank === 1 ? <Trophy size={18} /> : team.rank}
+                <span className={`rank rank-${index + 1}`}>
+                  {index === 0 ? <Trophy size={18} /> : index + 1}
                 </span>
-                <span className="chapter-mark">{team.initials}</span>
-                <span><strong>{team.chapter}</strong><small>Chapter representatives</small></span>
+                <span
+                  className="chapter-mark"
+                  style={{ backgroundColor: team.accentColor }}
+                >
+                  {teamInitials(team.displayName)}
+                </span>
+                <span><strong>{team.displayName}</strong><small>Chapter representatives</small></span>
               </div>
-              <span data-label="Volleyball">{team.volleyball}</span>
-              <span data-label="Eating">{team.eating}</span>
-              <span data-label="Support">{team.support}</span>
-              <strong className="total" data-label="Total">{team.total}</strong>
-              <div className="score-bar" style={{ width: `${(team.total / max) * 100}%` }} />
+              <span data-label="Volleyball">{team.volleyballPoints}</span>
+              <span data-label="Eating">{team.eatingCompetitionPoints}</span>
+              <span data-label="Support">
+                {team.ticketPoints + team.donationPoints + team.bonusPoints}
+              </span>
+              <strong className="total" data-label="Total">{team.totalPoints}</strong>
+              <div className="score-bar" style={{ width: `${(team.totalPoints / max) * 100}%` }} />
             </article>
           ))}
           <div className="leaderboard-foot">
-            <span>Points are illustrative until competition scoring is finalized.</span>
-            <strong>Trophy + eternal bragging rights await.</strong>
+            <span>Scores refresh automatically every 30 seconds.</span>
+            <a href="/leaderboard">
+              View full leaderboard <ArrowRight size={14} />
+            </a>
           </div>
         </div>
       </div>
