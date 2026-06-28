@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { PublicLeaderboard } from "@/components/PublicLeaderboard";
 import { eventConfig } from "@/lib/eventConfig";
-import { leaderboardRepository } from "@/lib/leaderboard";
-import type { LeaderboardResponse } from "@/types/leaderboard";
+import { getLiveLeaderboard } from "@/lib/leaderboard/live";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,14 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const teams = await leaderboardRepository.getTeams();
-  const initialData: LeaderboardResponse = {
-    teams,
-    lastUpdated:
-      teams.map((team) => team.lastUpdated).sort().at(-1) ??
-      new Date().toISOString(),
-    storageMode: "json",
-  };
+  const initialData = await getLiveLeaderboard();
 
   return (
     <PublicLeaderboard

@@ -73,7 +73,7 @@ function toCountEntries(counts: Map<string, number>) {
     .sort((a, b) => b.count - a.count);
 }
 
-async function performSync() {
+export async function fetchEventbriteTicketSnapshot() {
   const config = getEventbriteConfig();
   if (!config.enabled) {
     throw new EventbriteApiError(
@@ -138,8 +138,6 @@ async function performSync() {
     pointsAwarded += ticketPoints;
   }
 
-  await leaderboardRepository.replaceTicketPoints(teamPoints);
-
   const report: EventbriteSyncReport = {
     syncedAt: new Date().toISOString(),
     eventId: config.eventId,
@@ -155,6 +153,12 @@ async function performSync() {
     ),
     teamPoints,
   };
+  return report;
+}
+
+async function performSync() {
+  const report = await fetchEventbriteTicketSnapshot();
+  await leaderboardRepository.replaceTicketPoints(report.teamPoints);
   runtime.lastSync = report;
   return report;
 }

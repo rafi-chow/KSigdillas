@@ -59,7 +59,9 @@ session.
 
 ## Eventbrite Sync Setup
 
-Eventbrite ticket-support sync is optional and disabled by default. When it is
+When configured, Eventbrite ticket-support totals are loaded automatically
+whenever the public leaderboard refreshes. Results are cached for 30 seconds,
+so a completed order normally appears within one minute. When Eventbrite is
 disabled or incompletely configured, the leaderboard continues to work with
 manual score updates.
 
@@ -76,9 +78,9 @@ EVENTBRITE_SYNC_MIN_SECONDS=60
 ```
 
 `EVENTBRITE_PRIVATE_TOKEN` is server-only and must never use a `NEXT_PUBLIC_`
-prefix. The application uses it only from the authenticated sync API route.
-Public leaderboard responses never include attendee names, emails, order IDs,
-or raw Eventbrite data.
+prefix. The application uses it only in server-side Eventbrite requests and
+never sends it to the browser. Public leaderboard responses never include
+attendee names, emails, order IDs, or raw Eventbrite data.
 
 For accurate team matching, the answer choices for the Eventbrite question
 must match leaderboard display names. The current question is:
@@ -93,12 +95,11 @@ Ticket tiers award support points as configured in
 | Chicken + Veggie | 2 |
 | Beef Tier | 3 |
 
-To sync, open `/admin/leaderboard`, authenticate with `ADMIN_PASSCODE`, and
-select **Sync Eventbrite Tickets**. The result shows the last sync time,
-tickets counted, points awarded, skipped attendees, and unmatched answers.
-Sync replaces `ticketPoints` with the latest Eventbrite aggregates. Admins can
-still manually adjust ticket points between syncs, and Volleyball, Eating,
-Donation, and Bonus points remain fully manual and are never overwritten.
+The public homepage and `/leaderboard` refresh automatically every 30 seconds.
+Admins can also open `/admin/leaderboard` and select **Sync Eventbrite
+Tickets** to force a persisted mock-data snapshot and inspect skipped or
+unmatched attendees. Eventbrite totals replace the public Ticket score;
+Volleyball, Eating, Donation, and Bonus points remain manual.
 
 Keep the Eventbrite event in draft/private status until the real date, prices,
 refund policy, beneficiary, and required approvals are final.
