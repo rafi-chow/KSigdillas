@@ -32,7 +32,12 @@ export function TicketTierCard({
           </li>
         ))}
       </ul>
-      <a className="tier-link" href={ticketUrl}>
+      <a
+        className="tier-link"
+        href={ticketUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
         Choose this wristband <span>→</span>
       </a>
     </article>

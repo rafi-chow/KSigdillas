@@ -6,8 +6,8 @@ export const eventConfig = {
   venue: "707 S Davis Dr",
   venueNote: "Backyard location",
   ticketUrl:
-    process.env.NEXT_PUBLIC_EVENTBRITE_URL ??
-    "https://www.eventbrite.com/e/ksigdillas-tickets-placeholder",
+    process.env.NEXT_PUBLIC_EVENTBRITE_URL ||
+    "https://www.eventbrite.com/e/ksigdillas-tickets-1992696425651?aff=oddtdtcreator",
   instagramUrl:
     process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://instagram.com/placeholder",
   instagramHandle: "@ksigdillas",

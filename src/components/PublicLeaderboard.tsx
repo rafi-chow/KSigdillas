@@ -76,7 +76,12 @@ export function PublicLeaderboard({
         </Link>
         <div className="board-nav-actions">
           <Link href="/" className="board-back"><ArrowLeft size={16} /> Event home</Link>
-          <a href={ticketUrl} className="button button-cheese">
+          <a
+            href={ticketUrl}
+            className="button button-cheese"
+            target="_blank"
+            rel="noreferrer"
+          >
             Get Tickets <Ticket size={17} />
           </a>
         </div>
@@ -209,7 +214,9 @@ export function PublicLeaderboard({
       <footer className="board-footer">
         <div className="shell">
           <span>KSigdillas · Kappa Sigma Theta-Omega</span>
-          <a href={ticketUrl}>Support your chapter →</a>
+          <a href={ticketUrl} target="_blank" rel="noreferrer">
+            Support your chapter →
+          </a>
         </div>
       </footer>
     </main>

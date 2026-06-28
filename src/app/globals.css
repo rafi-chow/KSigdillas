@@ -349,27 +349,47 @@ h2 em {
 .hero-ticker {
   position: absolute;
   z-index: 4;
-  right: -25px;
+  right: 0;
   bottom: 0;
-  left: -25px;
-  display: flex;
-  height: 54px;
-  align-items: center;
-  justify-content: space-around;
-  gap: 25px;
+  left: 0;
+  display: grid;
+  height: 58px;
+  border-top: 3px solid var(--ink);
+  border-bottom: 3px solid var(--red-dark);
+  grid-template-columns: repeat(4, 1fr);
   overflow: hidden;
-  transform: rotate(-1deg);
   background: var(--cheese);
   color: var(--ink);
   font-family: Impact, Haettenschweiler, sans-serif;
-  font-size: 19px;
-  letter-spacing: .06em;
-  white-space: nowrap;
+  font-size: 18px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
-.hero-ticker i {
-  color: var(--red);
-  font-style: normal;
+.hero-ticker span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(23,20,18,.2);
+}
+
+.hero-ticker span:not(:last-child)::after {
+  position: absolute;
+  right: -10px;
+  z-index: 2;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red);
+  color: var(--cheese);
+  content: "+";
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 /* About */
@@ -480,20 +500,29 @@ h2 em {
   text-transform: uppercase;
 }
 
-.poster-stamp {
+.poster-policy {
   position: absolute;
-  right: -21px;
-  bottom: 35px;
-  display: grid;
-  width: 78px;
-  height: 78px;
-  place-items: center;
-  transform: rotate(-14deg);
-  border: 4px solid var(--red);
-  border-radius: 50%;
+  right: 28px;
+  bottom: 27px;
+  left: 28px;
+  display: flex;
+  min-height: 45px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
   color: var(--red);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.poster-policy svg {
+  width: 17px;
+  height: 17px;
 }
 
 /* Shared heading */
@@ -2604,7 +2633,7 @@ footer {
 
   .hero h1 {
     max-width: 100%;
-    font-size: clamp(70px, 23vw, 100px);
+    font-size: clamp(68px, 20vw, 88px);
   }
 
   .hero-subtitle {
@@ -2630,8 +2659,23 @@ footer {
   }
 
   .hero-ticker {
-    justify-content: flex-start;
-    padding-left: 20px;
+    display: flex;
+    height: 64px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    border-width: 2px;
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  .hero-ticker span {
+    display: none;
+  }
+
+  .hero-ticker::before {
+    content: "QUESADILLAS  +  HOOPS  +  VOLLEYBALL  +  PHILANTHROPY";
   }
 
   .about-grid {

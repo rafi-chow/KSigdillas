@@ -5,6 +5,7 @@ import {
   HeartHandshake,
   Trophy,
   Utensils,
+  WineOff,
   Volleyball,
 } from "lucide-react";
 import { ActivityCard } from "@/components/ActivityCard";
@@ -58,7 +59,10 @@ export default function Home() {
             <Utensils />
             <strong>COME<br />HUNGRY.</strong>
             <small>Food · Games · Good cause</small>
-            <span className="poster-stamp">NO<br />ALCOHOL</span>
+            <span className="poster-policy">
+              <WineOff />
+              Alcohol-free event
+            </span>
           </div>
         </div>
       </section>
@@ -160,7 +164,14 @@ export default function Home() {
         <div className="shell">
           <p>FRIDAY · 6:00 PM · BACKYARD</p>
           <h2>READY TO GET <em>CHEESY?</em></h2>
-          <a className="button button-dark" href={eventConfig.ticketUrl}>Get Tickets Now <span>→</span></a>
+          <a
+            className="button button-dark"
+            href={eventConfig.ticketUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Get Tickets Now <span>→</span>
+          </a>
         </div>
       </section>
 
@@ -179,7 +190,12 @@ export default function Home() {
         </div>
       </footer>
 
-      <a className="mobile-ticket-cta" href={eventConfig.ticketUrl}>
+      <a
+        className="mobile-ticket-cta"
+        href={eventConfig.ticketUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
         Get Tickets <span>→</span>
       </a>
     </main>

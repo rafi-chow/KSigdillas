@@ -17,7 +17,12 @@ export function HeroSection() {
           <a href="#activities">Activities</a>
           <a href="#faq">FAQ</a>
         </div>
-        <a className="button button-light nav-cta" href={eventConfig.ticketUrl}>
+        <a
+          className="button button-light nav-cta"
+          href={eventConfig.ticketUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
           <Ticket size={17} />
           Get Tickets
         </a>
@@ -38,7 +43,12 @@ export function HeroSection() {
             <strong>Philanthropy.</strong>
           </p>
           <div className="hero-actions">
-            <a className="button button-cheese" href={eventConfig.ticketUrl}>
+            <a
+              className="button button-cheese"
+              href={eventConfig.ticketUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               Get Tickets <Ticket size={19} />
             </a>
             <a className="button button-outline" href="#leaderboard">
@@ -65,9 +75,10 @@ export function HeroSection() {
         <QuesadillaArt />
       </div>
       <div className="hero-ticker" aria-hidden="true">
-        <span>QUESADILLAS</span><i>★</i><span>HOOPS</span><i>★</i>
-        <span>VOLLEYBALL</span><i>★</i><span>PHILANTHROPY</span><i>★</i>
-        <span>QUESADILLAS</span><i>★</i>
+        <span>Quesadillas</span>
+        <span>Hoops</span>
+        <span>Volleyball</span>
+        <span>Philanthropy</span>
       </div>
     </header>
   );
