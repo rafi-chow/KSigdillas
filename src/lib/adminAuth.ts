@@ -1,21 +1,32 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, scryptSync, timingSafeEqual } from "node:crypto";
 import type { NextRequest, NextResponse } from "next/server";
 
 export const adminCookieName = "ksigdillas_admin_session";
 const sessionDurationSeconds = 60 * 60 * 8;
+const passcodeComparisonSalt = "ksigdillas-admin-passcode-v1";
 
 function getPasscode() {
   return process.env.ADMIN_PASSCODE;
 }
 
-function digest(value: string) {
-  return createHmac("sha256", "ksigdillas-admin-passcode-v1")
-    .update(value)
-    .digest();
+function derivePasscode(value: string) {
+  return scryptSync(value, passcodeComparisonSalt, 32);
 }
 
-function safeEqual(left: string, right: string) {
-  return timingSafeEqual(digest(left), digest(right));
+function passcodesMatch(candidate: string, configured: string) {
+  return timingSafeEqual(
+    derivePasscode(candidate),
+    derivePasscode(configured),
+  );
+}
+
+function sessionTokensMatch(candidate: string, expected: string) {
+  const candidateBuffer = Buffer.from(candidate);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    candidateBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(candidateBuffer, expectedBuffer)
+  );
 }
 
 function createSessionToken(passcode: string) {
@@ -30,13 +41,17 @@ export function isAdminConfigured() {
 
 export function verifyAdminPasscode(candidate: string) {
   const passcode = getPasscode();
-  return Boolean(passcode && safeEqual(candidate, passcode));
+  return Boolean(passcode && passcodesMatch(candidate, passcode));
 }
 
 export function isAdminRequest(request: NextRequest) {
   const passcode = getPasscode();
   const token = request.cookies.get(adminCookieName)?.value;
-  return Boolean(passcode && token && safeEqual(token, createSessionToken(passcode)));
+  return Boolean(
+    passcode &&
+      token &&
+      sessionTokensMatch(token, createSessionToken(passcode)),
+  );
 }
 
 export function setAdminSession(response: NextResponse) {
