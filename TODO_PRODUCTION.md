@@ -203,7 +203,7 @@ Complete this with the event chair, treasurer, scorekeeper, and door lead:
 - [ ] Confirm a refund/cancellation removes the ticket points
 - [ ] Scan, duplicate-scan, manually check in, and check out test tickets
 - [ ] Add and subtract every manual score category
-- [ ] Confirm scores survive a redeploy and a fresh browser/device
+- [x] Confirm scores survive a redeploy and a fresh browser/device
 - [ ] Test homepage, leaderboard, Eventbrite, contact, and social links
 - [ ] Test current iPhone, Android, desktop, and poor-network behavior
 - [ ] Test keyboard navigation, text contrast, and accessible labels
