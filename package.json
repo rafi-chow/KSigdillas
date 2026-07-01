@@ -13,7 +13,7 @@
     "url": "https://github.com/rafi-chow/KSigdillas/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev",
