@@ -1,164 +1,174 @@
 # KSigdillas
 
-A production-ready landing page and live competition leaderboard for Kappa
-Sigma Theta-Omega's KSigdillas philanthropy event. Built with Next.js App
-Router, TypeScript, and Tailwind CSS.
+[![CI](https://github.com/rafi-chow/KSigdillas/actions/workflows/ci.yml/badge.svg)](https://github.com/rafi-chow/KSigdillas/actions/workflows/ci.yml)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The Kappa Sigma crest assets in `public/` are the unmodified official files
-provided by the [Kappa Sigma logo library](https://www.kappasigma.org/logos-icons/)
-and are paired with separate Theta-Omega chapter labeling.
+KSigdillas is a full-stack event platform for Kappa Sigma Theta-Omega's
+philanthropy competition. It combines a responsive event landing page,
+Eventbrite ticket attribution, a public live leaderboard, and a protected
+scorekeeping interface.
 
-## Local development
+[Live demo](https://ksigdillas.vercel.app) ·
+[Leaderboard](https://ksigdillas.vercel.app/leaderboard) ·
+[Architecture](ARCHITECTURE.md) ·
+[Production checklist](TODO_PRODUCTION.md)
+
+![KSigdillas landing page](docs/images/homepage.png)
+
+## What it demonstrates
+
+- Server-rendered Next.js App Router pages with a responsive visual system
+- A public read-only leaderboard that refreshes every 30 seconds
+- Server-only Eventbrite integration with attendee answers aggregated by team
+- Persistent, atomic score updates in free-tier Neon Postgres
+- A repository adapter that preserves a JSON-backed local fallback
+- Passcode-protected admin mutations using an HttpOnly session cookie
+- Server-side validation, generated totals, and non-negative score constraints
+- Secret isolation: database, Eventbrite, and admin credentials never enter the
+  browser bundle
+- Reproducible lint/build checks in GitHub Actions
+
+## System overview
+
+```mermaid
+flowchart LR
+  Visitor["Public visitor"] --> Web["Next.js pages"]
+  Scorekeeper["Scorekeeper"] --> Admin["Protected admin API"]
+  Web --> ReadAPI["Read-only leaderboard API"]
+  ReadAPI --> Service["Leaderboard service"]
+  Admin --> Repository["Repository interface"]
+  Service --> Repository
+  Service --> Eventbrite["Eventbrite API"]
+  Repository --> Neon["Neon Postgres"]
+  Repository -. local fallback .-> JSON["JSON file"]
+```
+
+Eventbrite remains the source of truth for ticket attribution. Postgres stores
+manual volleyball, eating, donation, and bonus scores. The public service
+combines both sources and recalculates the displayed totals. See
+[ARCHITECTURE.md](ARCHITECTURE.md) for request flows, boundaries, and design
+tradeoffs.
+
+## Technology
+
+| Area | Choice |
+| --- | --- |
+| Framework | Next.js 16, React 19, App Router |
+| Language | TypeScript with strict checking |
+| Database | Neon serverless Postgres |
+| External API | Eventbrite attendee API |
+| Deployment | Vercel |
+| Styling | Tailwind CSS entry point plus custom responsive CSS |
+| Icons | Lucide React |
+| Automation | GitHub Actions and Dependabot |
+
+## Run locally
+
+Requirements:
+
+- Node.js 22 or newer
+- npm
+- Optional Eventbrite and Neon credentials for live integrations
 
 ```bash
-npm install
+git clone https://github.com/rafi-chow/KSigdillas.git
+cd KSigdillas
+npm ci
 cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Without `DATABASE_URL`,
+the app uses `.data/leaderboard.json`. Without Eventbrite credentials, manual
+leaderboard scoring continues to work.
 
 ## Configuration
-
-Event content and fallbacks live in `src/lib/eventConfig.ts`. Copy
-`.env.example` to `.env.local` to configure the Eventbrite URL, Instagram URL,
-contact email, and admin passcode:
 
 ```env
 NEXT_PUBLIC_EVENTBRITE_URL=https://www.eventbrite.com/e/your-event
 NEXT_PUBLIC_INSTAGRAM_URL=https://instagram.com/your-account
 NEXT_PUBLIC_CONTACT_EMAIL=contact@example.com
-ADMIN_PASSCODE=use-a-long-random-passcode-here
-DATABASE_URL=postgresql://user:password@host/database?sslmode=require
-```
 
-`ADMIN_PASSCODE` and `DATABASE_URL` are server-only. Do not rename either with
-a `NEXT_PUBLIC_` prefix. The browser sends the entered passcode to the server
-once, and successful access is stored in an HttpOnly, same-site admin session
-cookie for eight hours. Database credentials are never sent to the browser.
+ADMIN_PASSCODE=use-a-long-random-passcode
+DATABASE_URL=your-server-only-postgres-connection-string
 
-## Leaderboard
-
-The leaderboard is public at
-[http://localhost:3000/leaderboard](http://localhost:3000/leaderboard) and
-refreshes every 30 seconds. Public requests use a read-only API endpoint.
-The default competition roster is AXO, DZ, ZTA, and DDD, with all categories
-reset to zero.
-
-Scorekeepers use
-[http://localhost:3000/admin/leaderboard](http://localhost:3000/admin/leaderboard):
-
-1. Enter the value configured as `ADMIN_PASSCODE`.
-2. Enter a positive point amount beside a category.
-3. Use **+** to add it or **−** to correct a mistake.
-4. Use **Edit team** to change a team name/accent, or **Add a team** to create
-   a new zero-point team.
-5. **Reset demo data** restores the six sample teams after confirmation.
-
-Totals are always recalculated on the server from the five categories. Public
-clients cannot call create, update, or reset operations without a valid admin
-session.
-
-## Eventbrite Sync Setup
-
-When configured, Eventbrite ticket-support totals are loaded automatically
-whenever the public leaderboard refreshes. Results are cached for 30 seconds,
-so a completed order normally appears within one minute. When Eventbrite is
-disabled or incompletely configured, the leaderboard continues to work with
-manual score updates.
-
-Add these values to `.env.local` for local development and to the server
-environment for deployment:
-
-```env
-NEXT_PUBLIC_EVENTBRITE_URL=https://www.eventbrite.com/e/ksigdillas-tickets-1992696425651
 EVENTBRITE_SYNC_ENABLED=true
-EVENTBRITE_EVENT_ID=1992696425651
+EVENTBRITE_EVENT_ID=your-event-id
 EVENTBRITE_PRIVATE_TOKEN=your-private-token
 EVENTBRITE_TEAM_QUESTION=Which sorority or team are you supporting?
-EVENTBRITE_SYNC_MIN_SECONDS=60
+EVENTBRITE_SYNC_MIN_SECONDS=30
 ```
 
-`EVENTBRITE_PRIVATE_TOKEN` is server-only and must never use a `NEXT_PUBLIC_`
-prefix. The application uses it only in server-side Eventbrite requests and
-never sends it to the browser. Public leaderboard responses never include
-attendee names, emails, order IDs, or raw Eventbrite data.
+Only variables prefixed with `NEXT_PUBLIC_` may be sent to the browser.
+`ADMIN_PASSCODE`, `DATABASE_URL`, and `EVENTBRITE_PRIVATE_TOKEN` are
+server-only. Never commit `.env.local`.
 
-For accurate team matching, the answer choices for the Eventbrite question
-must match leaderboard display names. The current question is:
-`Which sorority or team are you supporting?`
+## Leaderboard behavior
 
-Ticket tiers award support points as configured in
-`src/lib/scoringConfig.ts`:
+The public board is available at `/leaderboard`; scorekeepers use
+`/admin/leaderboard`.
 
-| Eventbrite ticket tier | Ticket points |
-| --- | ---: |
-| Basicdilla | 1 |
-| Chicken + Veggie | 2 |
-| Beef Tier | 3 |
+- Ticket points are derived from Eventbrite ticket type and support answer.
+- Manual score changes are validated and written atomically to Postgres.
+- Postgres generates `total_points` from the five score categories.
+- Eventbrite results are cached for 30 seconds and contain no attendee PII in
+  the public response.
+- Refunded or cancelled attendees are excluded from ticket totals.
+- The admin reset operation restores AXO, DZ, ZTA, and DDD with zero manual
+  scores.
 
-The public homepage and `/leaderboard` refresh automatically every 30 seconds.
-Admins can also open `/admin/leaderboard` and select **Sync Eventbrite
-Tickets** to force a persisted mock-data snapshot and inspect skipped or
-unmatched attendees. Eventbrite totals replace the public Ticket score;
-Volleyball, Eating, Donation, and Bonus points remain manual.
+Ticket values are configured in `src/lib/scoringConfig.ts`.
 
-Keep the Eventbrite event in draft/private status until the real date, prices,
-refund policy, beneficiary, and required approvals are final.
+## Repository layout
 
-## Demo Walkthrough
-
-The manual leaderboard can be demonstrated without publishing Eventbrite:
-
-1. Run `npm run dev`.
-2. Open `/leaderboard` in one browser window.
-3. Open `/admin/leaderboard` in another and enter `ADMIN_PASSCODE`.
-4. Add points to AXO, DZ, ZTA, or DDD.
-5. Refresh the public board, or wait for its 30-second automatic refresh.
-6. Use **Reset demo data** to return all four teams and categories to zero.
-
-Testing an actual Eventbrite purchase requires the event to be published so
-Eventbrite can issue a ticket. For a controlled test, publish it as a private
-event accessible only by its link and avoid publicly promoting that link.
-Complete the production checklist before accepting real purchases.
-
-Eventbrite settings can still be edited after publishing, including future
-date/time, capacity, ticket availability, and listing content. Changes affecting
-existing buyers should be communicated to them. Eventbrite only allows a
-published refund policy to become more flexible, not more restrictive, so
-confirm that policy before publishing.
-
-### Persistent leaderboard storage
-
-Production uses free-tier Neon Postgres through the
-`PostgresLeaderboardRepository`. When `DATABASE_URL` is present, the app
-automatically creates the `leaderboard_teams` table, seeds AXO, DZ, ZTA, and
-DDD if needed, and stores all manual score changes persistently. Score updates
-are atomic, totals are generated by Postgres, and category values cannot fall
-below zero.
-
-When `DATABASE_URL` is omitted, the app falls back to
-`JsonLeaderboardRepository` for local development. It writes to
-`.data/leaderboard.json` using serialized, atomic writes. Set
-`LEADERBOARD_DATA_PATH` to choose another local path.
-
-Both adapters implement `src/lib/leaderboard/repository.ts`, so API routes and
-UI components do not depend on a particular storage provider.
-
-## Deploying
-
-Import the repository into Vercel, then configure the public, admin, and
-Eventbrite variables shown above. Connect a Neon Postgres resource through the
-Vercel Marketplace so it supplies the server-only `DATABASE_URL`. The public
-page needs no authentication; only the admin routes use `ADMIN_PASSCODE`.
+```text
+src/app/                         Pages and server API routes
+src/components/                  Public and admin UI
+src/lib/eventbrite/              Server-only Eventbrite client and aggregation
+src/lib/leaderboard/             Repository interface and storage adapters
+src/types/                       Shared domain types
+docs/images/                     Repository screenshots
+.github/                         CI, ownership, and contribution automation
+```
 
 ## Quality checks
 
 ```bash
 npm run lint
 npm run build
+npm audit --omit=dev
 ```
 
-The event landing page is statically rendered. Leaderboard routes use the
-Node.js runtime so the repository and secure server-only admin logic can run on
-Vercel.
+Pull requests run lint and a production build on Node.js 22. Dependency updates
+are proposed weekly through Dependabot.
+
+## Security
+
+Public clients can only read leaderboard aggregates. Mutations require a valid
+server-issued admin session. No attendee names, emails, order IDs, access
+tokens, or database credentials are included in public API responses.
+
+The passcode model is intentionally scoped to a small event team rather than a
+general-purpose identity system. Rotate the passcode and Eventbrite token when
+staff access changes. Report vulnerabilities through
+[SECURITY.md](SECURITY.md).
+
+## Production status
+
+The software is deployed and uses persistent Postgres storage. Event-specific
+content—including final date, beneficiary, prices, policies, and operational
+approvals—remains provisional until every relevant item in
+[TODO_PRODUCTION.md](TODO_PRODUCTION.md) is signed off.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). By participating, contributors agree to
+follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+Source code is available under the [MIT License](LICENSE). The Kappa Sigma
+emblem is a third-party brand asset and is not relicensed under MIT; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
