@@ -33,5 +33,5 @@ export type TeamInput = Pick<Team, "name" | "displayName" | "accentColor">;
 export type LeaderboardResponse = {
   teams: Team[];
   lastUpdated: string;
-  storageMode: "json";
+  storageMode: "json" | "postgres";
 };

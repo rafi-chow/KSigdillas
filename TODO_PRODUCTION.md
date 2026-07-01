@@ -14,6 +14,8 @@ event. Put one person's name and a deadline beside every unchecked item.
 - [x] Public leaderboard refreshes Eventbrite ticket totals every 30 seconds
 - [x] Public leaderboard responses expose aggregate scores only
 - [x] Admin passcode is stored server-side
+- [x] Free Neon Postgres database connected through Vercel
+- [x] Manual leaderboard scores persist across server restarts
 
 ## Known unresolved website content
 
@@ -177,8 +179,8 @@ Someone must own the website after the original developer is unavailable:
 - [ ] Add the technical owner to the private GitHub repository
 - [ ] Add the technical owner to the Vercel project with least-required access
 - [ ] Transfer production accounts to chapter-controlled email addresses
-- [ ] Choose and configure Supabase/Postgres or another persistent database
-- [ ] Move manual volleyball/eating/donation/bonus scores off Vercel `/tmp`
+- [x] Choose and configure Postgres persistent storage
+- [x] Move manual volleyball/eating/donation/bonus scores off Vercel `/tmp`
 - [ ] Test database backups and score export/recovery
 - [ ] Decide who receives production error/uptime alerts
 - [ ] Record how Eventbrite and Vercel tokens will be rotated
@@ -186,9 +188,10 @@ Someone must own the website after the original developer is unavailable:
 - [ ] Define attendee-data retention and deletion expectations
 - [ ] Remove test credentials, test orders, and unused staff access before launch
 
-The current Eventbrite ticket totals are live and durable because Eventbrite is
-their source of truth. Manual competition categories still use temporary JSON
-storage on Vercel and are **not production-safe** until a database is connected.
+Eventbrite remains the source of truth for ticket totals. Manual competition
+categories are stored in Neon Postgres and persist across Vercel instances and
+deployments. A documented backup/export process is still required before the
+real event.
 
 ## Final acceptance test
 

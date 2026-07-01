@@ -3,7 +3,10 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getEventbriteConfigStatus } from "@/lib/eventbrite/config";
 import { fetchEventbriteTicketSnapshot } from "@/lib/eventbrite/sync";
-import { leaderboardRepository } from "@/lib/leaderboard";
+import {
+  leaderboardRepository,
+  leaderboardStorageMode,
+} from "@/lib/leaderboard";
 import { calculateTotalPoints } from "@/lib/scoringConfig";
 import type { LeaderboardResponse, Team } from "@/types/leaderboard";
 
@@ -60,6 +63,6 @@ export async function getLiveLeaderboard(): Promise<LeaderboardResponse> {
   return {
     teams: liveTeams,
     lastUpdated,
-    storageMode: "json",
+    storageMode: leaderboardStorageMode,
   };
 }
