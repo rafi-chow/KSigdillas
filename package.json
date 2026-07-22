@@ -23,10 +23,10 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "lucide-react": "^1.21.0",
-    "next": "^16.2.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "lucide-react": "^1.25.0",
+    "next": "^16.2.11",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
