@@ -17,6 +17,15 @@ scorekeeping interface.
 
 ![KSigdillas landing page](docs/images/homepage.png)
 
+## Project context
+
+This repository is maintained as a public engineering case study for a real
+event workflow. It is not an official Kappa Sigma International software
+product or a general-purpose, community-maintained framework. Publishing the
+source makes the architecture, security boundaries, and engineering tradeoffs
+available for review; reuse remains subject to the license and third-party
+brand terms below.
+
 ## What it demonstrates
 
 - Server-rendered Next.js App Router pages with a responsive visual system
@@ -130,7 +139,7 @@ src/lib/eventbrite/              Server-only Eventbrite client and aggregation
 src/lib/leaderboard/             Repository interface and storage adapters
 src/types/                       Shared domain types
 docs/images/                     Repository screenshots
-.github/                         CI, ownership, and contribution automation
+.github/                         CI, dependency updates, and repository policy
 ```
 
 ## Quality checks
@@ -162,10 +171,11 @@ content—including final date, beneficiary, prices, policies, and operational
 approvals—remains provisional until every relevant item in
 [TODO_PRODUCTION.md](TODO_PRODUCTION.md) is signed off.
 
-## Contributing
+## Development workflow
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). By participating, contributors agree to
-follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+This is a maintainer-owned portfolio project rather than a community-governed
+OSS initiative. The workflow used to develop and review changes is documented
+in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## License
 
