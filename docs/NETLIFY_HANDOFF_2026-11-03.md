@@ -1,5 +1,7 @@
 # Netlify implementation and handoff — November 3, 2026
 
+**November 4 update:** [The modern public UI release](MODERN_UI_2026-11-04.md) supersedes the design/deployment version below. It retains the red KSigdillas identity and animated cheese, with 96 automated and 32 browser checks passing. Its additional publishes require reassessing the credit reserve; external launch gates remain open.
+
 Implemented and deployed at **https://ksigdillas.netlify.app** with sales closed. Technical checks below passed; external launch gates remain open. This report supersedes older planning/access status summaries. Website sales remain disabled. The Stripe owner's destination edit and actual signed delivery remain a separate activation boundary.
 
 ## Implementation
@@ -49,7 +51,7 @@ Application commit: `10aed49` (earlier design/worker commit `bad9e99`, hosting f
 - Brevo's verified sender and Free 300/day allowance were rechecked. Its authenticated delivery callback is registered at the final Netlify origin. One labeled non-admission test reached the designated Gmail inbox, with PNG attachment, support reply-to and passing SPF/DKIM/DMARC. Its real accepted/delivered callbacks persisted at the Netlify receiver. Production still has zero orders/tickets. Correlation from callback to a real purchased-ticket job remains part of payment acceptance; it was tested synthetically only.
 - Anonymous transactional tracking was saved and independently reopened in Brevo. The received message contains an aggregate pixel and rewritten links. Brevo's [current API documentation](https://developers.brevo.com/changelog/2026/7/21) describes consent=false as anonymized reporting; complete pixel removal is [Enterprise-only](https://developers.brevo.com/changelog). The privacy page discloses this behavior. No paid upgrade was made. The existing key expiry remains February 3, 2027.
 - Both the current active and historical inactive organizer Payment Links were audited read-only: zero importable paid sales, zero already imported and zero requiring review. Their existing prices were verified. Automatic imports remain disabled.
-- See [the credit estimate](NETLIFY_CREDIT_BUDGET.md): 191.73 projected team credits under explicit assumptions, with 36.1% headroom. Current billing display is delayed; four publishes are charged conservatively in the estimate.
+- The original estimate was 191.73 team credits before the modern UI release. See [the updated credit estimate](NETLIFY_CREDIT_BUDGET.md): two further publish attempts raise the same model to 221.73, below the planned 30% reserve. Reassess usage before activation; the billing display is delayed and all six attempts are reserved conservatively.
 
 ## Exact owner handoff — prepared, not sent
 
