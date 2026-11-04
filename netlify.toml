@@ -1,0 +1,27 @@
+[build]
+  command = "npm run build -- --webpack"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Netlify automatically installs its current OpenNext adapter. Do not pin the
+# legacy plugin or turn this into a static export: checkout needs server routes.
+# Import credentials into the production context only, never this tracked file.
+[context.deploy-preview.environment]
+  MAINTENANCE_ENABLED = "false"
+  EVENT_OPERATIONS_ENABLED = "false"
+  EVENTBRITE_SYNC_ENABLED = "false"
+  STRIPE_CHECKOUT_ENABLED = "false"
+  STRIPE_PAYMENT_LINK_ENABLED = "false"
+
+[context.branch-deploy.environment]
+  MAINTENANCE_ENABLED = "false"
+  EVENT_OPERATIONS_ENABLED = "false"
+  EVENTBRITE_SYNC_ENABLED = "false"
+  STRIPE_CHECKOUT_ENABLED = "false"
+  STRIPE_PAYMENT_LINK_ENABLED = "false"

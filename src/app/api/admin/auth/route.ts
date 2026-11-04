@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (process.env.EVENT_OPERATIONS_ENABLED === "true" || process.env.NODE_ENV === "production") return NextResponse.json({ error: "Use individual staff sign-in." }, { status: 410 });
   if (!isAdminConfigured()) {
     return NextResponse.json(
       { error: "ADMIN_PASSCODE is not configured on the server." },

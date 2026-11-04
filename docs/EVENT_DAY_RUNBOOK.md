@@ -1,0 +1,128 @@
+# KSigdillas event-day runbook
+
+November 1: scoring instructions below are the packet-aligned release target. They are implemented locally; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including verification of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
+
+Current release status: event operations, Stripe integration code, brother
+tracking and Brevo/Resend support are implemented locally. Online payment
+activation, real sender/scheduler setup, production cutover and physical phone
+acceptance remain launch gates; see STRIPE_BROTHER_VERIFICATION.md and
+STRIPE_EMAIL_SETUP.md. Do not use local preview credentials on a public deployment.
+
+## Before opening
+
+- Organizer signs in at `/admin/leaderboard`; check-in staff use `/admin/check-in`.
+  Provision individual access; verify the correct role on each phone.
+- Verify event clock and prices: Thursday November 19, 2026, 6–9 PM Central;
+  volleyball starts at 7 PM. Presale $10/$15 ends at 6 PM; door prices $12/$18.
+- Confirm production database, backup and separate encryption-key recovery,
+  verified email sender, scheduled `/api/jobs` invocation, and monitoring.
+- Test the actual event phones over HTTPS. Camera permission must be granted by
+  the phone's user. Test both a fresh QR and a repeated scan.
+- Export the organizer-only check-in manifest. Store it privately on one controlled
+  device as the connectivity fallback. Keep the staff contact available:
+  zachzapalac@gmail.com.
+- Enable cash sales in Rules & access only when ready. The server also enforces
+  Thursday's 6–9 PM cash-sale window. No quantity cap is configured.
+
+## Admission
+
+Scan the guest's QR or read an image of it. A successful scan shows name, team, and
+Basicdilla/Meat-Veggie tier. Issue that wristband and admit once. Already-used,
+unpaid, refunded, suspended, or unknown tickets must not receive another admission.
+
+If a camera is unavailable, use the QR image reader, paste the ticket link, or
+search the guest's name/order reference under Orders. Check-in staff see only the
+minimum attendee information. Organizer lookup also supports email. A screenshot
+of a payment does not establish payment or a valid ticket.
+
+For a lost email, organizer queues a resend; the guest can also use their order's
+confirmation-page ticket links. For a lost/compromised unused QR, organizer replaces
+the ticket then resends; its old QR becomes invalid. Correct mistaken scans or team
+attribution with a reason. Review any finalized attendance result flagged afterward.
+
+## Door sales
+
+For verified cash, organizer enters the buyer email and each attendee's name,
+tier, and optional team, verifies the amount received, then issues tickets. It
+creates the order, tickets, points, and email job together. Check in the tickets
+once and issue the wristbands. Once Stripe service acceptance is complete, guests
+can use the same website checkout at door prices and pay their own card details.
+The buyer pays the approved processing charge. Do not claim card purchases work
+while new Stripe sales are disabled. Record the selected brother for cash sales
+when known; a cash sale creates no processing fee.
+
+## Brother contributions
+
+Organizer opens **Brother contributions** for ticket units/base revenue, personal
+cash gifts, and donated packages/points. Staff records “Money donated by” or
+“Food donated by” independently of the team receiving points. Use the real roster
+and approved aliases; unknown or ambiguous referrals remain unassigned.
+
+Seller/donor corrections require a reason. A personal gift is not ticket-sale
+revenue, and correcting attribution must not create another receipt or score.
+Refunds/disputes reduce active seller credit. Joint donor allocations cannot
+exceed the verified amount/packages. Keep the report and CSV private.
+
+## Scoring and winners
+
+- Staff records whole approved packages, the event day, team, and a verification
+  reference. Monday cheese/tortillas/veggies/meat/soda/water earn
+  75/75/125/175/150/75 respectively; ordinary values are 35/35/50/100/75/50.
+  Monday caps per chapter: cheese 10, tortillas 10, soda 6, water 4.
+  Refuse excess supplies: zero points and no accepted-package/donor credit.
+  Steak stays disabled until its product specification is supplied and implemented.
+- Slap: $2 / 10 points; pie: $2 / 15. Verify money before recording paid activity
+  participation. Hanging: 10 points per attempt; no invented dollar charge.
+- Monetary donations are recorded separately from tickets and paid activities.
+  Complete $5 increments earn points; the remaining dollars carry forward.
+- Stories earn 25; reels/feed posts earn 50. Verify both required Instagram tags
+  and evidence; a post cannot be credited again as another format.
+- Monday: use four labeled sorority boxes. Reconcile accepted whole retail packages
+  with the records; the most packages wins 500, regardless of their point values.
+- Tuesday: the chapter with the most verified pie/slap revenue wins 300. Exclude
+  direct donations, ticket sales and fees; deduct reversed/refunded purchases.
+- Wednesday overall longest-hang winner receives 300. Each daily contest closes
+  at 3 PM that day. There is no Tuesday/Wednesday food award.
+- Volleyball and eating each award 400/200/100 for first/second/third, based on
+  official results. Attendance closes at 9 PM Thursday and awards 1,000 once.
+  Organizer resolves ties and finalizes each contest once. Retain result evidence.
+- Never edit historical receipts to hide a mistake. Use an audited reversal or
+  result correction and review affected finalized awards.
+
+## Problems and recovery
+
+- Connectivity outage: switch to one controlled manual manifest. Record the exact
+  tickets admitted and reconcile when connected. Multiple disconnected scanners
+  cannot guarantee global duplicate prevention. Avoid issuing unverified orders.
+- Pending payment: retain pending status and investigate provider/order records;
+  a return-page visit is insufficient. No duplicate ticket should be created to
+  bypass the delay.
+- Failed email: inspect the delivery jobs and provider logs. Definite rejections
+  can retry; uncertain sends require confirmed acceptance or an explicit retry
+  decision in History & recovery. Do not blindly resend an accepted/queued message
+  or create another ticket order. The free quota may defer new messages; tickets
+  remain available on the order page. Accepted is distinct from delivered/bounced.
+- Exceptional cash refund: return the cash first, then record the specific ticket
+  refund and reason. Once Stripe is connected, use the exceptional refund form to
+  select tickets/fee amount, review, and confirm. Record changes only after Stripe
+  confirms. An unallocated dashboard partial refund appears in recovery; search
+  its order and allocate the confirmed amount. Refunded tickets lose validity,
+  original ticket points and seller credit. Original history remains recorded.
+- Database outage: pause sales/scoring, preserve the manual admission record, and
+  restore only into an empty recovery database using the private backup and
+  matching encryption key. Compare counts/funds/points before resuming writes.
+- A failed maintenance job or `attentionRequired > 0` requires organizer review.
+  Configure the external monitor to notify the designated operator; no notification
+  subscription is created by application code.
+- Independently check the authenticated health endpoint for a missing healthy
+  worker heartbeat. A scheduler that never runs cannot report its own failure.
+
+## Close and retention
+
+Close sales at 9 PM, reconcile cash and provider records, finalize attendance,
+review flagged awards, and export the totals/audit history for the organizer.
+Funds raised exclude service fees and taxes and are not a claim of money already
+transferred to Movember. Keep private attendee exports only as long as needed for
+operation/support. Pause new sales during rollback; preserve paid tickets and
+check-in history. Never enable the old and new sales channels without a reviewed
+cutover/reconciliation.

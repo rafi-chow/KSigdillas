@@ -36,7 +36,7 @@ function createSessionToken(passcode: string) {
 }
 
 export function isAdminConfigured() {
-  return Boolean(getPasscode());
+  return process.env.NODE_ENV !== "production" && process.env.EVENT_OPERATIONS_ENABLED !== "true" && Boolean(getPasscode());
 }
 
 export function verifyAdminPasscode(candidate: string) {
@@ -45,6 +45,8 @@ export function verifyAdminPasscode(candidate: string) {
 }
 
 export function isAdminRequest(request: NextRequest) {
+  if (process.env.EVENT_OPERATIONS_ENABLED === "true" || process.env.NODE_ENV === "production") return false;
+  if (request.method !== "GET" && request.headers.get("origin") !== new URL(request.url).origin) return false;
   const passcode = getPasscode();
   const token = request.cookies.get(adminCookieName)?.value;
   return Boolean(

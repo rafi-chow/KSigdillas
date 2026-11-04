@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
 import { AdminLeaderboard } from "@/components/AdminLeaderboard";
-
-export const metadata: Metadata = {
-  title: "Leaderboard Admin | KSigdillas",
-  robots: { index: false, follow: false },
-};
-
-export default function AdminLeaderboardPage() {
-  return <AdminLeaderboard />;
-}
+import { EventDesk } from "@/components/EventDesk";
+import { operationsEnabled } from "@/lib/operations/store";
+export const dynamic = "force-dynamic";
+export default function AdminPage() { return operationsEnabled() ? <EventDesk /> : <AdminLeaderboard />; }

@@ -8,16 +8,16 @@ export function KappaSigmaMark({
   return (
     <span
       className={`ks-brand-mark ${className}`.trim()}
-      aria-label="Kappa Sigma Theta-Omega"
+      role="img"
+      aria-label="KSigdillas · Kappa Sigma Theta-Omega"
     >
       <Image
-        src="/kappa-sigma-round-logo.png"
+        src="/ksigdillas-fundraiser-logo.png"
         alt=""
-        width={994}
-        height={994}
+        width={720}
+        height={360}
         priority
       />
-      <span>Θ-Ω</span>
     </span>
   );
 }

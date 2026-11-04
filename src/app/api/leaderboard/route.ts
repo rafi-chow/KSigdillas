@@ -9,7 +9,11 @@ export async function GET() {
     const response = await getLiveLeaderboard();
 
     return NextResponse.json(response, {
-      headers: { "Cache-Control": "no-store, max-age=0" },
+      // Only standings()'s allowlisted public aggregates enter this cache.
+      // Visible clients poll every 30s; CDN freshness is at most another 15s.
+      headers: {
+        "Cache-Control": "public, max-age=0, s-maxage=15, must-revalidate",
+      },
     });
   } catch {
     return NextResponse.json(

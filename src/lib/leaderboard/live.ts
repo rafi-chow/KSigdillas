@@ -1,4 +1,6 @@
 import "server-only";
+import { getStore, operationsEnabled } from "@/lib/operations/store";
+import { standings } from "@/lib/operations/service";
 
 import { unstable_cache } from "next/cache";
 import { getEventbriteConfigStatus } from "@/lib/eventbrite/config";
@@ -26,6 +28,7 @@ function latestTeamUpdate(teams: Team[]) {
 }
 
 export async function getLiveLeaderboard(): Promise<LeaderboardResponse> {
+  if (operationsEnabled()) return standings(await getStore().read());
   const teams = await leaderboardRepository.getTeams();
   let liveTeams = teams;
   let lastUpdated = latestTeamUpdate(teams);

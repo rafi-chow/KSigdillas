@@ -1,7 +1,7 @@
 import { QrCode, ScanLine, Ticket, Watch } from "lucide-react";
 
 const steps = [
-  { icon: Ticket, title: "Buy your ticket", copy: "Choose your tier on Eventbrite." },
+  { icon: Ticket, title: "Buy your ticket", copy: "Choose Basicdilla or Meat/Veggie." },
   { icon: QrCode, title: "Get confirmation", copy: "Your QR code arrives by email." },
   { icon: ScanLine, title: "Check in", copy: "Show your code at the door." },
   { icon: Watch, title: "Grab a wristband", copy: "Your color matches your food tier." },

@@ -1,37 +1,38 @@
 export const eventConfig = {
   name: "KSigdillas",
   organization: "Kappa Sigma Theta-Omega",
-  date: "Date to be announced",
-  dayAndTime: "Friday · 6:00 PM",
+  date: "Thursday, November 19, 2026",
+  dayAndTime: "Thursday · 6–9 PM",
   venue: "707 S Davis Dr",
-  venueNote: "Backyard location",
-  ticketUrl:
-    process.env.NEXT_PUBLIC_EVENTBRITE_URL ||
-    "https://www.eventbrite.com/e/ksigdillas-tickets-1992696425651?aff=oddtdtcreator",
-  instagramUrl:
-    process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "https://instagram.com/placeholder",
-  instagramHandle: "@ksigdillas",
-  contactEmail:
-    process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "ksigdillas@example.com",
-  beneficiaryConfirmed: false,
-  proceedsPercentageEnabled: false,
+  venueNote: "Backyard · Arlington, Texas",
+  timeZone: "America/Chicago",
+  ticketUrl: "/checkout",
+  instagramUrl: process.env.NEXT_PUBLIC_INSTAGRAM_URL?.includes("placeholder")
+    ? ""
+    : (process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? ""),
+  contactEmail: "zachzapalac@gmail.com",
 } as const;
-
 export const ticketTiers = [
   {
+    id: "basic",
     name: "Basicdilla",
     label: "The classic",
     color: "yellow",
+    price: 10,
+    doorPrice: 12,
     features: [
       "Backyard event access",
-      "Free sodas",
-      "Unlimited cheese quesadillas while supplies last",
+      "Sodas",
+      "Cheese quesadillas while supplies last",
     ],
   },
   {
-    name: "Chicken + Veggie",
+    id: "meat",
+    name: "Meat/Veggie Pass",
     label: "More on the menu",
     color: "orange",
+    price: 15,
+    doorPrice: 18,
     featured: true,
     features: [
       "Everything in Basicdilla",
@@ -39,14 +40,117 @@ export const ticketTiers = [
       "Veggie quesadilla options",
     ],
   },
+] as const;
+export const weekSchedule = [
   {
-    name: "Beef Tier",
-    label: "The full spread",
-    color: "red",
-    features: [
-      "Everything in previous tiers",
-      "Beef quesadilla access",
-      "Every available filling option",
-    ],
+    day: "MON 11/16",
+    title: "Food collection · bonus supply points",
+    time: "9 AM–3 PM",
+    location: "707 S Davis Dr backyard",
+  },
+  {
+    day: "TUE 11/17",
+    title: "Food collection",
+    time: "9 AM–3 PM",
+    location: "707 S Davis Dr backyard",
+  },
+  {
+    day: "TUE 11/17",
+    title: "Pie & slap",
+    time: "11 AM–3 PM",
+    location: "In front of UTA library · $2 each",
+  },
+  {
+    day: "WED 11/18",
+    title: "Food collection",
+    time: "9 AM–3 PM",
+    location: "707 S Davis Dr backyard",
+  },
+  {
+    day: "WED 11/18",
+    title: "Hanging challenge",
+    time: "11 AM–3 PM",
+    location: "In front of UTA library · 10 points per attempt",
+  },
+  {
+    day: "THU 11/19",
+    title: "KSigdillas",
+    time: "6–9 PM",
+    location: "707 S Davis Dr backyard · volleyball at 7 PM",
   },
 ] as const;
+export const donationProducts = [
+  {
+    id: "cheese",
+    name: "Shredded cheese",
+    unit: "Great Value Monterey Jack or Triple Cheddar · 8 oz bag",
+    points: 35,
+    mondayPoints: 75,
+    mondayCap: 10,
+    enabled: true,
+    url: "https://www.walmart.com/ip/106764433",
+    alternateUrl: "https://www.walmart.com/ip/46491724",
+  },
+  {
+    id: "tortillas",
+    name: "Small fajita flour tortillas",
+    unit: "Great Value · 20 count / 26 oz pack",
+    points: 35,
+    mondayPoints: 75,
+    mondayCap: 10,
+    enabled: true,
+    url: "https://www.walmart.com/ip/478147915",
+  },
+  {
+    id: "vegetables",
+    name: "Frozen peppers & onions",
+    unit: "Great Value · 20 oz bag",
+    points: 50,
+    mondayPoints: 125,
+    mondayCap: null,
+    enabled: true,
+    url: "https://www.walmart.com/ip/539250805",
+  },
+  {
+    id: "chicken",
+    name: "Frozen fajita chicken",
+    unit: "Great Value fajita-style sliced chicken breast · 3 lb bag",
+    points: 100,
+    mondayPoints: 175,
+    mondayCap: null,
+    enabled: true,
+    url: "https://www.walmart.com/ip/18248017222",
+  },
+  {
+    id: "steak",
+    name: "Frozen fajita steak",
+    unit: "Package details coming soon · not accepting yet",
+    points: 100,
+    mondayPoints: 175,
+    mondayCap: null,
+    enabled: false,
+    url: "",
+  },
+  {
+    id: "soda",
+    name: "Coca-Cola, Sprite, Dr Pepper, or Diet Coke",
+    unit: "12 cans · 12 fl oz each",
+    points: 75,
+    mondayPoints: 150,
+    mondayCap: 6,
+    enabled: true,
+    url: "https://www.walmart.com/ip/10452492",
+  },
+  {
+    id: "water",
+    name: "Purified drinking water",
+    unit: "Great Value · 24 bottles, 16.9 fl oz each",
+    points: 50,
+    mondayPoints: 75,
+    mondayCap: 4,
+    enabled: true,
+    url: "https://www.walmart.com/ip/13448854",
+  },
+] as const;
+export const causeCopy =
+  "KSigdillas raises awareness of men's health and Movember's work in mental health and suicide prevention, prostate cancer, and testicular cancer.";

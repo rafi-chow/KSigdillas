@@ -20,6 +20,7 @@ export type Team = {
   bonusPoints: number;
   totalPoints: number;
   lastUpdated: string;
+  attendance?: number;
 };
 
 export type ScoreUpdate = {
@@ -34,4 +35,10 @@ export type LeaderboardResponse = {
   teams: Team[];
   lastUpdated: string;
   storageMode: "json" | "postgres";
+  fundsRaisedCents?: number;
+  attendance?: number;
+  rules?: Pick<
+    import("@/lib/operations/model").Rule,
+    "id" | "label" | "points" | "mondayPoints" | "mondayCap" | "enabled"
+  >[];
 };

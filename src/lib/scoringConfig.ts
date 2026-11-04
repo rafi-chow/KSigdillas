@@ -9,14 +9,14 @@ export const scoringConfig: Record<
   { label: string; shortLabel: string; description: string }
 > = {
   ticketPoints: {
-    label: "Ticket / Support",
+    label: "Tickets",
     shortLabel: "Tickets",
     description: "Ticket sales and direct event support",
   },
   volleyballPoints: {
-    label: "Volleyball",
-    shortLabel: "Volleyball",
-    description: "Points earned in the 4v4 tournament",
+    label: "Activities",
+    shortLabel: "Activities",
+    description: "Verified activity and social participation",
   },
   eatingCompetitionPoints: {
     label: "Eating Competition",

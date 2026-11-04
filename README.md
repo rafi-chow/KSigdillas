@@ -1,5 +1,15 @@
 # KSigdillas
 
+> Current development: event operations, Stripe Checkout integration code, private
+> brother sales/donation tracking, and Brevo/Resend delivery are implemented locally
+> on `feat/event-operations`. **56 tests and 16 browser cases pass.** Live online
+> payments remain closed pending account, fee, sender, scheduler and phone checks.
+> See [current verification](docs/STRIPE_BROTHER_VERIFICATION.md),
+> [service setup](docs/STRIPE_EMAIL_SETUP.md),
+> [launch plan](docs/UPDATES_IMPLEMENTATION_PLAN.md), and
+> [event-day runbook](docs/EVENT_DAY_RUNBOOK.md).
+
+
 [![CI](https://github.com/rafi-chow/KSigdillas/actions/workflows/ci.yml/badge.svg)](https://github.com/rafi-chow/KSigdillas/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
