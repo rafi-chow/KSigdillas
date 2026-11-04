@@ -85,8 +85,7 @@
   opacity: 1;
   padding-block: 14px;
 }
-.home :global(.nav-links a:hover),
-.home :global(.hero-text-link:hover) {
+.home :global(.nav-links a:hover) {
   text-decoration: underline;
   text-underline-offset: 5px;
 }
@@ -166,9 +165,25 @@
 .home :global(.hero-text-link) {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding-block: 12px;
+  min-height: 50px;
+  padding: 12px 20px;
+  border: 1px solid #f4ddd5;
+  border-radius: 3px;
+  background: #ffffff12;
+  color: #fff7ee;
   font-size: 13px;
+  font-weight: 600;
+  transition: background 150ms ease, color 150ms ease;
+}
+.home :global(.hero-text-link:hover) {
+  background: var(--cream);
+  color: var(--red-dark);
+}
+.home :global(.hero-text-link:focus-visible) {
+  outline: 3px solid #fff7ee;
+  outline-offset: 4px;
 }
 .home :global(.quesadilla-art) {
   position: relative;
@@ -870,14 +885,17 @@
     font-size: 12px;
   }
   .home :global(.hero-actions) {
-    gap: 8px 20px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 320px;
   }
   .home :global(.button-light) {
     min-width: 155px;
   }
   .home :global(.hero-text-link) {
-    font-size: 12px;
-    gap: 6px;
+    font-size: 13px;
+    gap: 12px;
   }
   .home :global(.hero .quesadilla-art) {
     height: 215px;
