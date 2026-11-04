@@ -1,5 +1,7 @@
 # Deployment configuration status
 
+**Latest implementation status:** [Netlify handoff verification](NETLIFY_HANDOFF_2026-11-03.md) records the deployed site, current tests and remaining external gates. The planning snapshots below are retained as history.
+
 **Latest planning update:** follow [Finish to webhook handoff](FINISH_TO_WEBHOOK_HANDOFF_PLAN.md). Built-in-browser access to Netlify succeeded November 3: team `chowdhury-rafi01`, Free plan, 300/300 credits displayed remaining, October 22–November 21 billing period. Small request/bandwidth usage is rounded in that balance. Repository access/linking remains unverified; no Netlify deployment or environment upload has occurred. The plan prefers a bounded native Netlify scheduler, with separate independent monitoring, and ends before the owner edits Stripe’s webhook URL. Localhost and Brevo access were not rechecked in this continuation.
 
 ## Latest state — November 3, 2026

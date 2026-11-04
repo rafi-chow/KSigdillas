@@ -1,12 +1,15 @@
 # KSigdillas event-day runbook
 
-November 1: scoring instructions below are the packet-aligned release target. They are implemented locally; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including verification of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
+**Latest release:** https://ksigdillas.netlify.app is deployed with sales closed. See [current verification and remaining launch gates](NETLIFY_HANDOFF_2026-11-03.md). Native maintenance runs without a browser; independent alerting and the named event operator still need acceptance.
+
+Scoring instructions below follow the packet; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including organizer acceptance of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
 
 Current release status: event operations, Stripe integration code, brother
-tracking and Brevo/Resend support are implemented locally. Online payment
-activation, real sender/scheduler setup, production cutover and physical phone
-acceptance remain launch gates; see STRIPE_BROTHER_VERIFICATION.md and
-STRIPE_EMAIL_SETUP.md. Do not use local preview credentials on a public deployment.
+tracking and Brevo delivery are deployed. The verified sender, real delivery
+callback and native scheduler passed production checks. Independent monitoring,
+organizer evidence, Stripe cutover/payment acceptance and physical phone
+acceptance remain launch gates; see the current handoff above. Do not use local
+preview credentials on a public deployment.
 
 ## Before opening
 
@@ -15,7 +18,7 @@ STRIPE_EMAIL_SETUP.md. Do not use local preview credentials on a public deployme
 - Verify event clock and prices: Thursday November 19, 2026, 6–9 PM Central;
   volleyball starts at 7 PM. Presale $10/$15 ends at 6 PM; door prices $12/$18.
 - Confirm production database, backup and separate encryption-key recovery,
-  verified email sender, scheduled `/api/jobs` invocation, and monitoring.
+  verified email sender, native Netlify maintenance heartbeat, and independent monitoring.
 - Test the actual event phones over HTTPS. Camera permission must be granted by
   the phone's user. Test both a fresh QR and a repeated scan.
 - Export the organizer-only check-in manifest. Store it privately on one controlled
@@ -126,3 +129,13 @@ transferred to Movember. Keep private attendee exports only as long as needed fo
 operation/support. Pause new sales during rollback; preserve paid tickets and
 check-in history. Never enable the old and new sales channels without a reviewed
 cutover/reconciliation.
+
+## Netlify release, monitoring and rollback
+
+- Use the final HTTPS origin above for organizer and guest entry points. Staff credentials and the encryption recovery key are private; never copy preview credentials into production.
+- The native trigger is every minute; full work runs each minute November 15–21 Central and every 15 minutes otherwise. The authenticated `/api/jobs?health=true` endpoint reports scheduler liveness separately from outstanding business exceptions. Missing-heartbeat allowances are 5/35 minutes respectively. Monitor `attentionRequired` as well as HTTP status; the independent alert service still requires setup.
+- Pending sessions/provider failures retain rapid retry; settled orders use daily fallback polling, entering five-minute checks at admission hours. Unresolved refunds/disputes keep five-minute reconciliation. Signed provider events continue to provide prompt updates.
+- Follow [the credit envelope](NETLIFY_CREDIT_BUDGET.md). Netlify billing notifications begin at 50% usage according to its documentation; designate the recipient/operator and verify delivery. Recheck actual balance before opening sales and before event day. Do not purchase a plan or credit pack automatically.
+- Before rollback, keep/pause sales and preserve valid tickets, check-ins, provider events and the current database. Restore only an explicitly payment-compatible tested deployment in Netlify; never overwrite live purchases with the zero-order prelaunch snapshot. Retain database URL, encryption key, provider credentials and current callback secret. Inspect queue recovery and private cache behavior after rollback.
+- The pre-Netlify snapshot and matching key exist privately on this laptop; Netlify/Neon account access is also needed for recovery. The organizer must retain an approved recovery copy separately before event day. Restore into an isolated empty database first, apply the deletion manifest if present, and reconcile paid tickets/funds before switching any production connection.
+- The Vercel project remains unchanged. No Git push or Vercel publish was triggered. Keep its existing payment receiver until Stripe cutover is verified; do not redirect Stripe POSTs through a website redirect. After verification, update old public entry points deliberately. No website-issued production ticket links need migration at this checkpoint (zero orders/tickets); both reviewed Payment Links currently have no paid sales, but re-audit at cutover. Handle the independently shared Payment Link's 6 PM/end-of-event cutoff separately from website flags.

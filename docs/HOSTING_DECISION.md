@@ -1,5 +1,7 @@
 # Hosting decision — November 3, 2026
 
+**Latest implementation status:** [Netlify handoff verification](NETLIFY_HANDOFF_2026-11-03.md) records the deployed site, current tests and remaining external gates. The planning snapshots below are retained as history.
+
 **Current execution plan:** [Finish to webhook handoff](FINISH_TO_WEBHOOK_HANDOFF_PLAN.md). Built-in-browser inspection succeeded November 3: team `chowdhury-rafi01` is on Free with 300/300 credits displayed remaining for October 22–November 21; small request/bandwidth usage is rounded. Two existing projects share the allowance. Target no more than 210 total team credits for the period to preserve the planned 30% reserve; KSigdillas runtime/traffic estimates remain outstanding. Prefer a native scheduled worker bounded below its 30-second limit, with independent monitoring. The synchronous 60-second limit discussed below does not apply to native scheduled functions. Preserve pending recovery after the event when reducing the active schedule.
 
 The user has approved **resuming the free-host transition** after the webhook/Vercel discussion. No Netlify site has been created or deployed, and no plan purchased or upgraded. The existing Vercel project and URL are unchanged until cutover. `netlify.toml` is a preparation configuration; deployed acceptance remains outstanding.

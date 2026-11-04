@@ -1,5 +1,7 @@
 # Finish plan: design, Netlify, and Stripe handoff
 
+**Latest implementation status:** [Netlify handoff verification](NETLIFY_HANDOFF_2026-11-03.md) records the deployed site, current tests and remaining external gates. The planning snapshots below are retained as history.
+
 Updated November 3, 2026. **Planning only:** this revision changes documentation, not application code, accounts, or deployments. This is the current execution order; earlier plans remain supporting requirements and historical evidence.
 
 ## Finish line
