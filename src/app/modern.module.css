@@ -171,7 +171,7 @@
   padding: 12px 20px;
   border: 1px solid #f4ddd5;
   border-radius: 3px;
-  background: #ffffff12;
+  background: var(--red-dark);
   color: #fff7ee;
   font-size: 13px;
   font-weight: 600;

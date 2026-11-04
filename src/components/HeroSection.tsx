@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { eventConfig } from "@/lib/eventConfig";
 import { QuesadillaArt } from "./CheeseArt";
 import { KappaSigmaMark } from "./KappaSigmaMark";
@@ -35,7 +35,8 @@ export function HeroSection({ canBuy = false }: { canBuy?: boolean }) {
               <ArrowRight size={18} aria-hidden="true" />
             </a>
             <a className="hero-text-link" href="#schedule">
-              See the week’s events <span aria-hidden="true">↗</span>
+              See the week’s events
+              <ArrowDown size={18} aria-hidden="true" />
             </a>
           </div>
         </div>
