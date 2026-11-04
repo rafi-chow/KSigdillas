@@ -1,6 +1,49 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+test("supply guide switches days with keyboard controls and exposes accepted products", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.screenshot({
+    path: `test-results/modern-home-${test.info().project.name}.png`,
+    animations: "disabled",
+  });
+  await page.getByRole("link", { name: "Supply guide", exact: true }).click();
+  await page.screenshot({
+    path: `test-results/modern-guide-${test.info().project.name}.png`,
+    animations: "disabled",
+  });
+  const cheese = page.locator('[data-product="cheese"]');
+  const water = page.locator('[data-product="water"]');
+  await expect(cheese.locator(".supply-points")).toContainText("75");
+  await expect(cheese.locator(".supply-points")).toContainText(
+    "Cap 10 / chapter",
+  );
+  await page.getByRole("radio", { name: "Monday", exact: true }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByRole("radio", { name: "Tue / Wed", exact: true }),
+  ).toBeChecked();
+  await expect(cheese.locator(".supply-points")).toContainText("35");
+  await expect(cheese.locator(".supply-points")).toContainText("No cap");
+  await expect(water.locator(".supply-points")).toContainText("50");
+  await page.keyboard.press("ArrowLeft");
+  await expect(cheese.locator(".supply-points")).toContainText("75");
+  await cheese.getByText("Accepted products", { exact: true }).click();
+  await expect(
+    cheese.getByRole("link", { name: "Triple Cheddar option" }),
+  ).toHaveAttribute("href", "https://www.walmart.com/ip/46491724");
+  await expect(page.locator(".mobile-ticket-cta")).toHaveCount(0);
+  await page.setViewportSize({ width: 640, height: 900 });
+  await page.addStyleTag({ content: "html { font-size: 200%; }" });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true);
+});
+
 test("homepage shares one public feed, backs off failures, and pauses hidden polling", async ({
   page,
   request,

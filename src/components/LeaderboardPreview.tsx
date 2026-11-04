@@ -25,16 +25,9 @@ export function LeaderboardPreview() {
     <section className="leaderboard-section section" id="leaderboard">
       <div className="shell">
         <div className="section-heading section-heading-light">
-          <p className="eyebrow light">
-            <span />
-            Live competition
-          </p>
-          <h2>
-            CHAPTER <em>STANDINGS.</em>
-          </h2>
-          <p>
-            Four chapters. Verified ticket, activity, and contribution points.
-          </p>
+          <p className="eyebrow light">Chapter competition</p>
+          <h2>Chapter standings.</h2>
+          <p>Ticket, activity and contribution points for all four chapters.</p>
         </div>
 
         {funds !== undefined && (

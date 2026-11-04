@@ -1,10 +1,6 @@
 import Image from "next/image";
 
-export function KappaSigmaMark({
-  className = "",
-}: {
-  className?: string;
-}) {
+export function KappaSigmaMark({ className = "" }: { className?: string }) {
   return (
     <span
       className={`ks-brand-mark ${className}`.trim()}
@@ -14,8 +10,8 @@ export function KappaSigmaMark({
       <Image
         src="/ksigdillas-fundraiser-logo.png"
         alt=""
-        width={720}
-        height={360}
+        width={2560}
+        height={1440}
         priority
       />
     </span>

@@ -1,47 +1,41 @@
 import { PolicyLinks } from "@/components/PolicyLinks";
-import { publicPrices, money } from "@/lib/policies";
-import {
-  Award,
-  Drumstick,
-  HeartHandshake,
-  Trophy,
-  Utensils,
-  WineOff,
-  Volleyball,
-} from "lucide-react";
-import { ActivityCard } from "@/components/ActivityCard";
 import { FAQItem } from "@/components/FAQItem";
 import { HeroSection } from "@/components/HeroSection";
 import { LeaderboardPreview } from "@/components/LeaderboardPreview";
 import { TicketTierCard } from "@/components/TicketTierCard";
-import { WristbandFlow } from "@/components/WristbandFlow";
 import { KappaSigmaMark } from "@/components/KappaSigmaMark";
+import { EventGuide } from "@/components/EventGuide";
 import { checkoutAvailable } from "@/lib/payments/stripe";
 import { operationsEnabled } from "@/lib/operations/store";
 import { salesWindowOpen } from "@/lib/operations/rules";
-export const dynamic = "force-dynamic";
-import { EventGuide } from "@/components/EventGuide";
+import { publicPrices, money } from "@/lib/policies";
 import { causeCopy, eventConfig, ticketTiers } from "@/lib/eventConfig";
+import styles from "./modern.module.css";
+
+export const dynamic = "force-dynamic";
 
 const faqs = [
-  ["Is alcohol allowed?", "No. KSigdillas is a no-alcohol event."],
-  [
-    "Can I attend without playing?",
-    "Absolutely. Come eat, cheer, and support your favorite chapter.",
-  ],
   [
     "Is food included?",
-    "Yes, based on your wristband tier and while supplies last. Menu options may vary based on donated ingredients.",
+    "Yes. Basicdilla includes cheese quesadillas and sodas. Meat/Veggie adds chicken and veggie options. Food is available while supplies last; ingredients may vary.",
   ],
+  [
+    "Do I have to play volleyball?",
+    "No. You can come for the food and watch the games.",
+  ],
+  [
+    "How do I check in?",
+    "After payment, your admission QR code arrives by email. Show it at the door to get your wristband. Each ticket admits one guest.",
+  ],
+  ["Is alcohol allowed?", "No. KSigdillas is an alcohol-free event."],
   [
     "Are tickets refundable?",
-    "Tickets are nonrefundable except where required by law. Contact the organizer about cancellation, postponement or payment errors. Read the ticket terms for details.",
+    "Tickets are nonrefundable except where required by law. Contact the organizer about cancellation, postponement or payment errors. See the ticket terms for details.",
   ],
   [
-    "Are tickets cheaper online?",
-    `Current online totals are ${money(publicPrices().online.basic)} Basicdilla / ${money(publicPrices().online.meat)} Meat/Veggie, including the processing fee. Cash door tickets are $12 / $18. Presale ends Thursday at 6 PM.`,
+    "Can I pay at the door?",
+    "Yes. Cash tickets are $12 for Basicdilla or $18 for Meat/Veggie. Online presale ends Thursday at 6 PM.",
   ],
-  ["Where is the address?", "The backyard event is at 707 S Davis Dr."],
   [
     "What if the date changes?",
     "Ticket holders will be notified directly of any schedule changes.",
@@ -51,65 +45,25 @@ const faqs = [
 export default function Home() {
   const canBuy =
     operationsEnabled() && checkoutAvailable() && salesWindowOpen();
+  const prices = publicPrices();
   return (
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} className={styles.home}>
       <HeroSection canBuy={canBuy} />
-
-      <section className="about-section section" id="about">
-        <div className="shell about-grid">
-          <div className="about-copy">
-            <p className="eyebrow">
-              <span />
-              Kappa Sigma Theta-Omega · Arlington
-            </p>
-            <h2>
-              WHAT IS <em>KSIGDILLAS?</em>
-            </h2>
-            <p className="lead">
-              Join us November 19 for quesadillas and 4v4 volleyball at 707 S
-              Davis Dr. Food and activities close our November 16–19
-              philanthropy week.
-            </p>
-            <p>{causeCopy}</p>
-          </div>
-          <div className="about-poster">
-            <span className="poster-tape" />
-            <p>THURSDAY NIGHT</p>
-            <Utensils />
-            <strong>
-              COME
-              <br />
-              HUNGRY.
-            </strong>
-            <small>Food · Games · Good cause</small>
-            <span className="poster-policy">
-              <WineOff />
-              Alcohol-free event
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="tickets-section section" id="tickets">
+      <section
+        className="tickets-section section"
+        id="tickets"
+        aria-labelledby="tickets-heading"
+      >
         <div className="shell">
-          <div className="section-heading centered">
-            <p className="eyebrow">
-              <span />
-              Admission &amp; menu
-            </p>
-            <h2>
-              CHOOSE YOUR <em>WRISTBAND.</em>
-            </h2>
-            <p>
-              Basicdilla includes cheese quesadillas and sodas. The Meat/Veggie
-              Pass adds chicken and veggie options. Food is available while
-              supplies last.
-            </p>
+          <div className="section-heading">
+            <p className="eyebrow">Thursday, November 19</p>
+            <h2 id="tickets-heading">Tickets.</h2>
+            <p>Choose your wristband. Both include admission and sodas.</p>
           </div>
           <div className="tier-grid">
             {ticketTiers.map((tier) => (
               <TicketTierCard
-                key={tier.name}
+                key={tier.id}
                 {...tier}
                 ticketUrl={eventConfig.ticketUrl}
                 canBuy={canBuy}
@@ -118,136 +72,80 @@ export default function Home() {
           </div>
           <div className="ticket-notes">
             <p>
-              <strong>Presale ends Thursday at 6 PM.</strong> Door prices: $12
-              Basicdilla / $18 Meat-Veggie, paid in cash. Online prices above
-              include the processing fee; no second fee is added.
+              Online totals include the processing fee:{" "}
+              {money(prices.online.basic)} / {money(prices.online.meat)}.
+              Presale ends Thursday at 6 PM.
             </p>
             <p>
-              Food is available while supplies last. Menu may vary based on
-              donated ingredients.
+              Food is available while supplies last. Door tickets are cash only.
             </p>
           </div>
         </div>
       </section>
-
-      <section className="activities-section section" id="activities">
-        <div className="shell">
-          <div className="section-heading split-heading">
-            <div>
-              <p className="eyebrow">
-                <span />
-                Bring your game
-              </p>
-              <h2>
-                MORE THAN
-                <br />
-                <em>QUESADILLAS.</em>
-              </h2>
-            </div>
-            <p>
-              Rack up points for your chapter—or claim a spot on the sideline
-              and enjoy the show.
-            </p>
-          </div>
-          <div className="activity-grid">
-            <ActivityCard
-              icon={Utensils}
-              number="01"
-              title="Quesadillas"
-              description="Hot off the griddle, with fillings based on your wristband tier."
-              accent="yellow"
-            />
-            <ActivityCard
-              icon={Volleyball}
-              number="02"
-              title="4v4 Volleyball"
-              description="Starts Thursday at 7 PM. Placement points: 400 / 200 / 100."
-              accent="red"
-            />
-            <ActivityCard
-              icon={Drumstick}
-              number="03"
-              title="Most Eaten"
-              description="10 quesadillas in 6 minutes. Placements earn 400 / 200 / 100 points."
-              accent="orange"
-            />
-          </div>
-          <div className="prize-strip">
-            <Trophy />
-            <div>
-              <strong>Queso Queen chapter award</strong>
-              <span>
-                Every activity adds points to the live chapter leaderboard.
-              </span>
-            </div>
-            <Award />
-          </div>
-        </div>
-      </section>
-
-      <EventGuide />
-
-      <LeaderboardPreview />
-
-      <section className="entry-section section" id="entry">
-        <div className="shell">
-          <div className="section-heading centered">
-            <p className="eyebrow">
-              <span />
-              How tickets work
-            </p>
-            <h2>
-              HOW ENTRY <em>WORKS.</em>
-            </h2>
-          </div>
-          <WristbandFlow />
-        </div>
-      </section>
-
-      <section className="philanthropy-section section">
-        <div className="shell philanthropy-card">
-          <div className="heart-art">
-            <HeartHandshake />
-          </div>
+      <section
+        className="about-section section"
+        id="about"
+        aria-labelledby="about-heading"
+      >
+        <div className="shell event-overview">
           <div>
-            <p className="eyebrow light">
-              <span />
-              The reason we gather
-            </p>
-            <h2>
-              FOOD, FRIENDS &amp; <em>A PURPOSE.</em>
+            <p className="eyebrow">Thursday · 6–9 PM Central</p>
+            <h2 id="about-heading">
+              Quesadillas &amp;
+              <br />
+              volleyball.
             </h2>
-            <p>
-              Supporting Movember and the conversations that help men live
-              healthier lives. Together, we can raise awareness of mental health
-              and suicide prevention, prostate cancer, and testicular cancer.
+            <p className="section-intro">
+              At 707 S Davis Dr, Arlington. Join us in the backyard after three
+              days of chapter events and supply collection.
             </p>
           </div>
-          <div className="impact-note">
-            <strong>Men’s health matters.</strong>
-            <span>Supporting Movember. Every conversation counts.</span>
+          <div className="evening-list" id="activities">
+            <article>
+              <span>01</span>
+              <div>
+                <h3>Food</h3>
+                <p>
+                  Cheese, chicken and veggie quesadillas, based on your
+                  wristband.
+                </p>
+              </div>
+            </article>
+            <article>
+              <span>02</span>
+              <div>
+                <h3>4v4 volleyball</h3>
+                <p>Starts at 7 PM. Sand court, double elimination.</p>
+              </div>
+            </article>
+            <article>
+              <span>03</span>
+              <div>
+                <h3>Eating challenge</h3>
+                <p>
+                  10 quesadillas. 6 minutes. Placements earn chapter points.
+                </p>
+              </div>
+            </article>
           </div>
         </div>
       </section>
-
-      <section className="faq-section section" id="faq">
+      <EventGuide />
+      <LeaderboardPreview />
+      <section
+        className="faq-section section"
+        id="faq"
+        aria-labelledby="faq-heading"
+      >
         <div className="shell faq-grid">
           <div className="faq-intro">
-            <p className="eyebrow">
-              <span />
-              Good to know
-            </p>
-            <h2>
-              QUESTIONS?
-              <br />
-              <em>ANSWERED.</em>
-            </h2>
+            <p className="eyebrow">Before you come</p>
+            <h2 id="faq-heading">Questions.</h2>
             <p>
-              Still need something? Reach us at{" "}
+              Contact{" "}
               <a href={`mailto:${eventConfig.contactEmail}`}>
                 {eventConfig.contactEmail}
               </a>
-              .
             </p>
           </div>
           <div className="faq-list">
@@ -257,27 +155,24 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <section className="final-cta">
-        <div className="shell">
-          <p>THURSDAY, NOVEMBER 19 · 6–9 PM · BACKYARD</p>
-          <h2>
-            READY TO GET <em>CHEESY?</em>
-          </h2>
-          <a className="button button-dark" href={eventConfig.ticketUrl}>
-            {canBuy ? "Buy Tickets" : "View Ticket Details"} <span>→</span>
-          </a>
+      <section
+        className="cause-section section"
+        aria-labelledby="cause-heading"
+      >
+        <div className="shell cause-layout">
+          <KappaSigmaMark />
+          <div>
+            <p className="eyebrow">Kappa Sigma Theta-Omega</p>
+            <h2 id="cause-heading">Supporting Movember.</h2>
+            <p>{causeCopy}</p>
+          </div>
         </div>
       </section>
-
       <footer>
         <div className="shell footer-grid">
           <div className="footer-brand">
-            <KappaSigmaMark />
-            <div>
-              <strong>KSIGDILLAS</strong>
-              <span>{eventConfig.organization}</span>
-            </div>
+            <strong>KSIGDILLAS</strong>
+            <span>{eventConfig.organization}</span>
           </div>
           <div className="footer-links">
             <a href={`mailto:${eventConfig.contactEmail}`}>Contact</a>
@@ -290,10 +185,6 @@ export default function Home() {
           <p>November 19, 2026 · Arlington, Texas · All times Central.</p>
         </div>
       </footer>
-
-      <a className="mobile-ticket-cta" href={eventConfig.ticketUrl}>
-        {canBuy ? "Buy Tickets" : "Ticket Details"} <span>→</span>
-      </a>
     </main>
   );
 }

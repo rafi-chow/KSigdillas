@@ -325,21 +325,35 @@ test("packet public guide shows exact Monday points, caps, social tags and both 
   page,
 }) => {
   await page.goto("/");
-  const cheese = page.getByRole("row").filter({ hasText: "Shredded cheese" });
-  await expect(cheese.getByRole("cell")).toHaveText(["75", "35", "10"]);
-  const water = page
-    .getByRole("row")
-    .filter({ hasText: "Purified drinking water" });
-  await expect(water.getByRole("cell")).toHaveText(["75", "50", "4"]);
+  const cheese = page.locator('[data-product="cheese"] .supply-points');
+  const water = page.locator('[data-product="water"] .supply-points');
+  await expect(cheese).toContainText("75 pts");
+  await expect(cheese).toContainText("Cap 10 / chapter");
+  await expect(water).toContainText("75 pts");
+  await expect(water).toContainText("Cap 4 / chapter");
+  await page.getByRole("radio", { name: "Tue / Wed", exact: true }).check();
+  await expect(cheese).toContainText("35 pts");
+  await expect(water).toContainText("50 pts");
   await expect(
-    page.getByText(/We cannot accept supplies above the cap/),
+    page.getByText(/Excess supplies cannot be accepted/),
+  ).toBeVisible();
+  await page.getByText("Contest awards & points", { exact: true }).click();
+  await expect(
+    page
+      .getByText("Tuesday pie/slap revenue winner", { exact: true })
+      .locator(".."),
+  ).toContainText("300 points");
+  await expect(
+    page.getByText(/Direct donations and ticket sales do not count/),
+  ).toBeVisible();
+  await page.getByText("Activities & contributions", { exact: true }).click();
+  await expect(
+    page.getByText(/Instagram posts must tag @kappasigmauta and @movember.usa/),
   ).toBeVisible();
   await expect(
-    page.getByText(/Tuesday’s 300-point winner raises/),
-  ).toBeVisible();
-  await expect(page.getByText(/Instagram posts must tag/)).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Eating challenge", exact: true }),
+    page
+      .getByRole("heading", { name: "Eating challenge", exact: true })
+      .first(),
   ).toBeVisible();
   await expect(
     page.getByText(
@@ -353,14 +367,12 @@ test("staff rejects excess supplies, shows box totals and verifies social tags w
 }) => {
   await signIn(page);
   const chapter = test.info().project.name === "chromium" ? "zta" : "ddd";
-  const form = page
-    .locator("section")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "FOOD / ACTIVITY / SOCIAL",
-        exact: true,
-      }),
-    });
+  const form = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "FOOD / ACTIVITY / SOCIAL",
+      exact: true,
+    }),
+  });
   await form
     .getByRole("combobox", { name: "Team", exact: true })
     .selectOption(chapter);

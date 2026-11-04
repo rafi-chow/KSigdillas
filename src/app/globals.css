@@ -3117,8 +3117,9 @@ footer {
 }
 
 /* Philanthropy week and event operations */
-.ks-brand-mark { width: 56px; height: 56px; border-radius: 8px; background: #fff; padding: 3px; flex-shrink: 0; overflow: hidden; }
-.ks-brand-mark img { position: absolute; width: 340%; height: 340%; max-width: none; left: 50%; top: 50%; transform: translate(-50%, -50%); object-fit: contain; border-radius: 0; }
+.ks-brand-mark { width: 64px; height: 64px; border-radius: 50%; background: #faf5ed; padding: 0; flex-shrink: 0; overflow: hidden; }
+/* The source has a wide empty canvas. Frame the complete round mark with clear space. */
+.ks-brand-mark img { position: absolute; width: 335%; height: auto; max-width: none; left: 50%; top: 50%; transform: translate(-50%, -43.5%); border-radius: 0; }
 .tier-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 880px; margin-inline: auto; }
 .tier-price { margin: 12px 0; }.tier-price strong { font-size: 2rem; }.tier-price span { display: block; font-size: .85rem; }
 
