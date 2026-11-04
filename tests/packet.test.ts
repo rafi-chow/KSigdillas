@@ -15,6 +15,7 @@ import { capRemaining, contestTotals } from "../src/lib/operations/contests";
 import { applyPacket, packetPreview } from "../src/lib/operations/packet";
 import { saveBrother, brotherReport } from "../src/lib/operations/brothers";
 import { testEnvironment } from "./integration-fixtures";
+import { donationProducts } from "../src/lib/eventConfig";
 before(testEnvironment);
 const monday = new Date("2026-11-16T12:00:00-06:00");
 const end = new Date("2026-11-19T21:00:00-06:00");
@@ -44,10 +45,10 @@ const result = (contest: string, teamId = "axo") => ({
   boxesVerified: true,
 });
 
-test("packet explicit supply rates give 675 Monday / 345 ordinary; no invented money", () => {
+test("packet supplies including specified steak give 850 Monday / 445 ordinary; no invented money", () => {
   for (const [day, expected] of [
-    ["2026-11-16", 675],
-    ["2026-11-17", 345],
+    ["2026-11-16", 850],
+    ["2026-11-17", 445],
   ] as const) {
     const s = state();
     for (const id of [
@@ -55,6 +56,7 @@ test("packet explicit supply rates give 675 Monday / 345 ordinary; no invented m
       "tortillas",
       "vegetables",
       "chicken",
+      "steak",
       "soda",
       "water",
     ])
@@ -62,6 +64,35 @@ test("packet explicit supply rates give 675 Monday / 345 ordinary; no invented m
     assert.equal(standings(s).teams[0].donationPoints, expected);
     assert.equal(standings(s).fundsRaisedCents, 0);
   }
+});
+
+test("specified steak bags count once, earn the correct daily rate and reverse without invented cash", () => {
+  const product = donationProducts.find((product) => product.id === "steak")!;
+  assert.equal(product.enabled, true);
+  assert.equal(product.url, "https://www.walmart.com/ip/5195803576");
+  assert.match(product.unit, /Fire Roasted Vegetables · 18 oz bag/);
+  const s = state();
+  const bags = input("steak", 2);
+  const id = addEntry(s, bags, "test", monday);
+  addEntry(s, bags, "test", monday);
+  assert.equal(standings(s).teams[0].donationPoints, 350);
+  assert.equal(contestTotals(s)[0].mondayPackages, 2);
+  assert.equal(capRemaining(s, "axo", "steak", "2026-11-16"), null);
+  addEntry(s, input("steak", 1, "axo", "2026-11-18"), "test", monday);
+  assert.equal(standings(s).teams[0].donationPoints, 450);
+  assert.equal(standings(s).fundsRaisedCents, 0);
+  reverseEntry(
+    s,
+    {
+      requestKey: randomUUID(),
+      id,
+      reason: "Returned two verified steak packages",
+    },
+    "test",
+    monday,
+  );
+  assert.equal(standings(s).teams[0].donationPoints, 100);
+  assert.equal(contestTotals(s)[0].mondayPackages, 0);
 });
 
 test("caps refuse excess atomically; no box/donor credit; reversal restores allowance once", () => {

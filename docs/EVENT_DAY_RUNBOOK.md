@@ -73,7 +73,9 @@ exceed the verified amount/packages. Keep the report and CSV private.
   75/75/125/175/150/75 respectively; ordinary values are 35/35/50/100/75/50.
   Monday caps per chapter: cheese 10, tortillas 10, soda 6, water 4.
   Refuse excess supplies: zero points and no accepted-package/donor credit.
-  Steak stays disabled until its product specification is supplied and implemented.
+  Steak: Great Value Steak Fajitas with Fire Roasted Vegetables, 18 oz bag
+  ([accepted product](https://www.walmart.com/ip/5195803576)). One complete bag
+  earns 175 Monday / 100 Tuesday–Wednesday points, with no chapter cap.
 - Slap: $2 / 10 points; pie: $2 / 15. Verify money before recording paid activity
   participation. Hanging: 10 points per attempt; no invented dollar charge.
 - Monetary donations are recorded separately from tickets and paid activities.

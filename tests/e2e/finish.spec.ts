@@ -16,6 +16,11 @@ test("supply guide switches days with keyboard controls and exposes accepted pro
   });
   const cheese = page.locator('[data-product="cheese"]');
   const water = page.locator('[data-product="water"]');
+  const steak = page.locator('[data-product="steak"]');
+  await expect(steak.locator(".supply-description")).toContainText(
+    "Fire Roasted Vegetables · 18 oz bag",
+  );
+  await expect(steak.locator(".supply-points")).toContainText("175");
   await expect(cheese.locator(".supply-points")).toContainText("75");
   await expect(cheese.locator(".supply-points")).toContainText(
     "Cap 10 / chapter",
@@ -28,6 +33,13 @@ test("supply guide switches days with keyboard controls and exposes accepted pro
   await expect(cheese.locator(".supply-points")).toContainText("35");
   await expect(cheese.locator(".supply-points")).toContainText("No cap");
   await expect(water.locator(".supply-points")).toContainText("50");
+  await expect(steak.locator(".supply-points")).toContainText("100");
+  await steak.getByText("Accepted products", { exact: true }).click();
+  await expect(steak.getByRole("link")).toHaveAttribute(
+    "href",
+    "https://www.walmart.com/ip/5195803576",
+  );
+  await page.getByRole("radio", { name: "Tue / Wed", exact: true }).focus();
   await page.keyboard.press("ArrowLeft");
   await expect(cheese.locator(".supply-points")).toContainText("75");
   await cheese.getByText("Accepted products", { exact: true }).click();

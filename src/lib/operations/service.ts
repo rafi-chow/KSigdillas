@@ -14,6 +14,7 @@ import {
 import type { Category, LedgerEntry, Order, Role, State } from "./model";
 import { attributeInitialDonation, validateBrother } from "./brothers";
 import { purchaseTerms } from "../policies";
+import { donationProducts } from "../eventConfig";
 
 import {
   capRemaining,
@@ -144,9 +145,15 @@ export function createOrder(
     tokenHash: digest(token),
     tokenBox: seal(token),
     ticketIds: [],
-    ...(input.termsVersion === purchaseTerms.version ? {
-      terms: { version: purchaseTerms.version, acceptedAt: iso(now), digest: digest(JSON.stringify(purchaseTerms)) },
-    } : {}),
+    ...(input.termsVersion === purchaseTerms.version
+      ? {
+          terms: {
+            version: purchaseTerms.version,
+            acceptedAt: iso(now),
+            digest: digest(JSON.stringify(purchaseTerms)),
+          },
+        }
+      : {}),
   };
   order.totalCents = order.baseCents + feeCents;
   for (const attendee of input.attendees) {
@@ -667,10 +674,9 @@ export function editRule(s: State, raw: unknown, operator: string, now: Date) {
     throw new Error("Rule changed; refresh before editing.");
   if (retiredAwards.includes(r.id) && input.enabled)
     throw new Error("That award was retired by the packet rules.");
-  if (r.id === "steak" && input.enabled)
-    throw new Error(
-      "Specify and implement the steak package before enabling it.",
-    );
+  const product = donationProducts.find((product) => product.id === r.id);
+  if (input.enabled && product && (!product.enabled || !product.url))
+    throw new Error("Specify an accepted package before enabling this item.");
   Object.assign(r, {
     points: input.points,
     mondayPoints: input.mondayPoints,

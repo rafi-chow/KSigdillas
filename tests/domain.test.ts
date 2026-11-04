@@ -179,8 +179,9 @@ test("food fixture is 375 Monday / 195 Tuesday and does not invent funds", () =>
     assert.equal(standings(s).fundsRaisedCents, 0);
   }
 });
-test("steak disabled, invalid quantities rejected, hanging is 10 with no cash", () => {
+test("disabled supplies and invalid quantities are rejected; hanging is 10 with no cash", () => {
   const s = state();
+  s.rules.find((r) => r.id === "steak")!.enabled = false;
   const input = {
     requestKey: randomUUID(),
     teamId: "axo",
@@ -250,7 +251,7 @@ test("$7+$3 donation earns 100; reversing $3 leaves $7 and 50", () => {
   assert.equal(standings(s).teams[0].totalPoints, 50);
   assert.equal(standings(s).fundsRaisedCents, 700);
 });
-test("rule edits are prospective, versioned, and reject stale revisions / steak enable", () => {
+test("rule edits are prospective, versioned, reject stale revisions and allow specified steak", () => {
   const s = state();
   const input = {
     requestKey: randomUUID(),
@@ -286,20 +287,21 @@ test("rule edits are prospective, versioned, and reject stale revisions / steak 
       monday,
     ),
   );
-  assert.throws(() =>
-    editRule(
-      s,
-      {
-        id: "steak",
-        revision: 1,
-        points: 100,
-        enabled: true,
-        reason: "Unknown package",
-      },
-      "test",
-      monday,
-    ),
+  const steak = editRule(
+    s,
+    {
+      id: "steak",
+      revision: 1,
+      points: 100,
+      enabled: true,
+      mondayPoints: 175,
+      reason: "Verified Great Value 18 oz steak fajita package",
+    },
+    "test",
+    monday,
   );
+  assert.equal(steak.enabled, true);
+  assert.equal(steak.revision, 2);
 });
 test("single attendance award, cutoffs, repeat and audited winner correction", () => {
   const s = state();

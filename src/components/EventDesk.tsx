@@ -21,7 +21,7 @@ import type {
   RemoteRefund,
   RecordedEntry,
 } from "@/lib/operations/model";
-import { eventConfig } from "@/lib/eventConfig";
+import { donationProducts, eventConfig } from "@/lib/eventConfig";
 import { KappaSigmaMark } from "./KappaSigmaMark";
 import { AttendeeForm, type Attendee } from "./OrderForm";
 import { BrotherDesk, BrotherSelect } from "./BrotherDesk";
@@ -243,6 +243,9 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
     </option>
   ));
   const selectedRule = desk?.rules.find((r) => r.id === ruleId);
+  const selectedProduct = donationProducts.find(
+    (product) => product.id === ruleId,
+  );
   const pending = busy ? "Working…" : "Save";
   if (checking)
     return (
@@ -591,6 +594,11 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
                           ))}
                       </select>
                     </label>
+                    {selectedProduct && (
+                      <p className="ops-muted">
+                        Accepted package: {selectedProduct.unit}
+                      </p>
+                    )}
                     <label>
                       Event day
                       <select
@@ -1306,12 +1314,8 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
                         type="checkbox"
                         name="enabled"
                         defaultChecked={r.enabled}
-                        disabled={r.id === "steak"}
                       />
                       Enabled
-                      {r.id === "steak"
-                        ? " · awaiting product/package details"
-                        : ""}
                     </label>
                     <label>
                       Change reason
@@ -1489,8 +1493,16 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
                     </p>
                   ))}
                 <h3>Payment recovery</h3>
-                <p><a href="/admin/launch">Review launch readiness</a></p>
-                {!desk.integrations?.refundWriteEnabled && <p>Stripe refunds are handled by the account owner. Confirmed refunds are reconciled here; no refund-write access is enabled.</p>}
+                <p>
+                  <a href="/admin/launch">Review launch readiness</a>
+                </p>
+                {!desk.integrations?.refundWriteEnabled && (
+                  <p>
+                    Stripe refunds are handled by the account owner. Confirmed
+                    refunds are reconciled here; no refund-write access is
+                    enabled.
+                  </p>
+                )}
                 <p>
                   Last healthy maintenance run:{" "}
                   {desk.integrations?.heartbeat ?? "Not observed yet"}.

@@ -124,12 +124,12 @@ export const donationProducts = [
   {
     id: "steak",
     name: "Frozen fajita steak",
-    unit: "Package details coming soon · not accepting yet",
+    unit: "Great Value Steak Fajitas with Fire Roasted Vegetables · 18 oz bag",
     points: 100,
     mondayPoints: 175,
     mondayCap: null,
-    enabled: false,
-    url: "",
+    enabled: true,
+    url: "https://www.walmart.com/ip/5195803576",
   },
   {
     id: "soda",

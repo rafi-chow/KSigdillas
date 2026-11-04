@@ -1,10 +1,12 @@
 # Packet rules implementation and verification
 
+**November 4 package approval:** the organizer supplied [Great Value Steak Fajitas with Fire Roasted Vegetables, 18 oz](https://www.walmart.com/ip/5195803576). The complete bag is now an accepted steak package at the existing 175 Monday / 100 ordinary points, with no cap. Historical references to pending steak details below are superseded by this approval.
+
 November 1, 2026. Implemented locally on `feat/event-operations`. The packet and subsequent organizer clarifications are authoritative. This section records the local rules verification run. Subsequent approved database preparation and November 3 Vercel configuration are recorded in `DEPLOYMENT_SETUP_STATUS.md`; November 3 payment changes passed 71 tests in `PAYMENT_LINK_VERIFICATION.md`. No new code deployment, real payment, external email or historical import occurred.
 
 ## Implemented
 
-- Explicit Monday supply rates: cheese/tortillas/veggies/meat/soda/water **75/75/125/175/150/75**; ordinary **35/35/50/100/75/50**. Steak remains disabled pending its package.
+- Explicit Monday supply rates: cheese/tortillas/veggies/meat/soda/water **75/75/125/175/150/75**; ordinary **35/35/50/100/75/50**. Chicken and the approved 18 oz steak package both use the meat rate.
 - Monday per-chapter caps: cheese 10, tortillas 10, soda 6, water 4. Over-limit submissions are rejected in the database transaction with the remaining allowance. Staff accepts only the permitted amount and refuses the rest. Refused supplies create no accepted package, donor contribution or points. Reversals restore allowance once; rejected supplies are never automatically promoted.
 - Four Monday chapter boxes, with **500** to the most accepted whole retail packages. Box counts must be physically reconciled before finalization. Package count is independent of point value.
 - Tuesday **300** to the most verified pie/slap money, net of reversals. Activity receipts are joined to their dated, attributed source entries. Direct gifts, tickets, other days, no-team receipts and fees do not contribute to chapter eligibility.
@@ -17,7 +19,7 @@ November 1, 2026. Implemented locally on `feat/event-operations`. The packet and
 
 | Fixture | Expected result |
 | --- | --- |
-| One package of each active supply category | **675 Monday / 345 ordinary**, $0 invented cash |
+| One package of each active supply category, including steak | **850 Monday / 445 ordinary**, $0 invented cash |
 | Two Monday cheese bags plus Tuesday water pack | **200 points** |
 | Two cheese + soda + water | **375 Monday / 195 ordinary** |
 | Nine cheese accepted, then three offered | Reject the three-package submission; one remaining slot; totals stay **9 / 675** until staff accepts one |

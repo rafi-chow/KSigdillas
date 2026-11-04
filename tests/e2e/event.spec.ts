@@ -33,7 +33,9 @@ test("public site has approved schedule, two tiers, product units and responsive
   await expect(page.getByText("9 AM–3 PM", { exact: true })).toHaveCount(3);
   await expect(page.getByText("11 AM–3 PM", { exact: true })).toHaveCount(2);
   await expect(
-    page.getByText("Package details coming soon · not accepting yet"),
+    page.getByText(
+      "Great Value Steak Fajitas with Fire Roasted Vegetables · 18 oz bag",
+    ),
   ).toBeVisible();
   await expect(
     page.getByText("Thursday, November 19, 2026", { exact: false }).first(),
@@ -360,6 +362,55 @@ test("packet public guide shows exact Monday points, caps, social tags and both 
       /Monday food winner|Tuesday food winner|Wednesday food winner/,
     ),
   ).toHaveCount(0);
+});
+
+test("staff can record the approved 18 oz steak package and manage its enabled rule", async ({
+  page,
+}) => {
+  await signIn(page);
+  const before = await page.evaluate(async () =>
+    (await fetch("/api/leaderboard")).json(),
+  );
+  await page.getByLabel("Item or activity").selectOption("steak");
+  await expect(
+    page.getByText(
+      "Accepted package: Great Value Steak Fajitas with Fire Roasted Vegetables · 18 oz bag",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Event day", exact: true })
+    .selectOption("2026-11-16");
+  await page.getByLabel("Quantity", { exact: true }).fill("1");
+  const reference = `Verified 18 oz steak package ${randomUUID()}`;
+  await page
+    .getByLabel("Receipt / post reference or verification note")
+    .fill(reference);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Saved.");
+  await expect(page.getByText(reference, { exact: true })).toBeVisible();
+  const after = await page.evaluate(async () =>
+    (await fetch("/api/leaderboard")).json(),
+  );
+  const points = (data: { teams: { donationPoints: number }[] }) =>
+    data.teams.reduce((sum, team) => sum + team.donationPoints, 0);
+  expect(points(after)).toBe(points(before) + 175);
+  await page
+    .getByRole("button", { name: "Rules & access", exact: true })
+    .click();
+  const form = page
+    .locator("form")
+    .filter({
+      has: page.getByRole("heading", {
+        name: /^Frozen fajita steak · revision /,
+      }),
+    });
+  await expect(
+    form.getByRole("checkbox", { name: "Enabled", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    form.getByRole("checkbox", { name: "Enabled", exact: true }),
+  ).toBeChecked();
 });
 
 test("staff rejects excess supplies, shows box totals and verifies social tags without exposing representatives", async ({
