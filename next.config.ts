@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
         "/tickets/:path*",
         "/orders/:path*",
         "/admin/:path*",
-        "/api/:path*",
+        "/api/:path((?!leaderboard$).*)",
         "/checkout",
       ].map((source) => ({
         source,

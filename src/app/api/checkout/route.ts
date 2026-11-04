@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { boundedJson, RequestError } from "@/lib/http";
 import { z } from "zod";
 import {
@@ -8,13 +8,17 @@ import {
   cancelCheckout,
   reconcileSession,
   stripeGateway,
+  budgetStripeGateway,
 } from "@/lib/payments/stripe";
-import { enforceOrigin, takeLimit } from "@/lib/operations/auth";
+import {
+  enforceOrigin,
+  takeLimit,
+  requestNetwork,
+} from "@/lib/operations/auth";
 import { getStore } from "@/lib/operations/store";
 import { digest } from "@/lib/operations/crypto";
-import { deliverDue } from "@/lib/email/delivery";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) =>
   NextResponse.json(body, {
@@ -25,6 +29,7 @@ const json = (body: unknown, status = 200) =>
     },
   });
 export async function POST(request: NextRequest) {
+  const deadline = Date.now() + 20000;
   if (!stripeRuntimeAvailable())
     return json(
       {
@@ -54,19 +59,14 @@ export async function POST(request: NextRequest) {
     const allowed = await store.transaction(
       (s) =>
         takeLimit(s, "checkout-global", 120, now) &&
-        takeLimit(
-          s,
-          `checkout-ip:${digest(process.env.VERCEL === "1" ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown" : "direct")}`,
-          30,
-          now,
-        ),
+        takeLimit(s, `checkout-ip:${digest(requestNetwork(request))}`, 30, now),
     );
     if (!allowed)
       return json(
         { error: "Too many checkout requests. Please wait a minute." },
         429,
       );
-    const gateway = stripeGateway();
+    const gateway = budgetStripeGateway(stripeGateway(), deadline);
     if (input.action === "create")
       return json(
         await startCheckout(
@@ -88,15 +88,14 @@ export async function POST(request: NextRequest) {
     if (!order || !attempt?.sessionId)
       return json({ error: "Order not found." }, 404);
     await reconcileSession(store, attempt.sessionId, gateway, now);
-    after(async () => {
-      await deliverDue(store);
-    });
+    // Ticket email is durable work for the native scheduled worker.
     return json({
       status: (await store.read()).orders.find((o) => o.id === order.id)!
         .status,
     });
   } catch (error) {
-    if (error instanceof RequestError) return json({ error: error.message }, error.status);
+    if (error instanceof RequestError)
+      return json({ error: error.message }, error.status);
     const message = error instanceof Error ? error.message : "";
     return json(
       {

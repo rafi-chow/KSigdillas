@@ -39,6 +39,9 @@ test("launch policies, all-in prices, consent and keyboard access", async ({
   expect(headers["content-security-policy"]).toContain("object-src 'none'");
   expect(headers["cache-control"]).toContain("no-store");
   expect(headers["permissions-policy"]).toContain("camera=(self)");
+  const publicScores = await request.get("/api/leaderboard");
+  expect(publicScores.headers()["cache-control"]).toContain("s-maxage=15");
+  expect(publicScores.headers()["cache-control"]).not.toContain("private");
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Disallow: /tickets/");
   expect((await request.get("/api/operations/launch")).status()).toBe(401);

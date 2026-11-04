@@ -9,7 +9,20 @@ import type { Role, State } from "./model";
 import { loginInput } from "./validation";
 import { audit, requireRole } from "./service";
 import type { Store } from "./store";
+import { isIP } from "node:net";
 export const staffCookie = "ksigdillas_staff";
+export function requestNetwork(
+  request: Pick<NextRequest, "headers">,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const candidate = env.SITE_ID
+    ? request.headers.get("x-nf-client-connection-ip")
+    : env.VERCEL === "1"
+      ? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      : "direct";
+  if (candidate === "direct") return candidate;
+  return candidate && isIP(candidate) ? candidate : "unknown";
+}
 export function enforceOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
   if (!origin || origin !== new URL(process.env.APP_URL ?? request.url).origin)

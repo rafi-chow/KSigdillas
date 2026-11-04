@@ -10,6 +10,7 @@ import {
   sessionUser,
   staffCookie,
   takeLimit,
+  requestNetwork,
 } from "@/lib/operations/auth";
 import {
   addDonation,
@@ -70,7 +71,7 @@ async function handle(request: NextRequest, context: Context) {
     }
     if (path === "auth" && request.method === "POST") {
       const body = await boundedJson(request);
-      const network = process.env.VERCEL === "1" ? (request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown") : "direct";
+      const network = requestNetwork(request);
       const result = await loginToStore(store, body, network, now);
       if (!result)
         return json(
@@ -566,7 +567,11 @@ async function handle(request: NextRequest, context: Context) {
           .strict()
           .parse(body);
         const order = s.orders.find((o) => o.id === input.id);
-        if (!order || order.privacyAnonymizedAt || !["paid", "partially-refunded"].includes(order.status))
+        if (
+          !order ||
+          order.privacyAnonymizedAt ||
+          !["paid", "partially-refunded"].includes(order.status)
+        )
           throw new Error("Order is not eligible for delivery.");
         if (
           s.jobs.some(
