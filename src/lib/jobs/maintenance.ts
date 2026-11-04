@@ -45,7 +45,9 @@ export function maintenanceHealth(state: State, now = new Date()) {
         (e.status === "pending" &&
           Date.parse(e.createdAt) < now.getTime() - 300000),
     ).length +
-    state.refunds.filter((r) => ["review", "failed"].includes(r.status)).length;
+    state.refunds.filter((r) => ["review", "failed"].includes(r.status))
+      .length +
+    state.checkouts.filter((c) => Boolean(c.error)).length;
   return {
     healthy,
     lastSuccess: heartbeat?.resetsAt ?? null,

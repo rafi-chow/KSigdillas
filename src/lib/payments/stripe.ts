@@ -10,7 +10,7 @@ import {
   refundTickets,
   dispute,
 } from "../operations/service";
-import { grossUp, saleEnd } from "../operations/rules";
+import { grossUp, saleStart, saleEnd } from "../operations/rules";
 import { digest, unseal } from "../operations/crypto";
 import { appUrl } from "../email/delivery";
 import { publicPrices, purchaseTerms } from "../policies";
@@ -850,6 +850,25 @@ export async function receiveStripeEvent(
       });
   });
 }
+export function nextReconciliationAt(
+  s: State,
+  attempt: CheckoutAttempt,
+  now: Date,
+) {
+  const time = now.getTime();
+  const unresolved =
+    s.orders.find((o) => o.id === attempt.orderId)?.status === "disputed" ||
+    s.refunds.some(
+      (r) =>
+        r.orderId === attempt.orderId &&
+        ["requested", "pending"].includes(r.status),
+    );
+  if (!["complete", "expired"].includes(attempt.status)) return time + 60000;
+  if (unresolved || (time >= saleStart && time < saleEnd)) return time + 300000;
+  const next = time + 86400000;
+  // Enter fast admission-hour checking even when yesterday's fallback was late.
+  return time < saleStart ? Math.min(next, saleStart) : next;
+}
 export async function processStripeWork(
   store: Store,
   gateway: StripeGateway,
@@ -1014,6 +1033,7 @@ export async function processStripeWork(
     });
     if (!claimed) continue;
     sessionCount++;
+    let reconciled = false;
     try {
       if (now.getTime() >= saleEnd && a.status === "open") {
         try {
@@ -1023,14 +1043,18 @@ export async function processStripeWork(
         }
       }
       await reconcileSession(store, a.sessionId!, gateway, now);
+      reconciled = true;
     } catch {
       failed++;
     } finally {
       await store.transaction((s) => {
         const c = s.checkouts.find((c) => c.id === a.id)!;
         c.leaseUntil = undefined;
+        c.error = reconciled
+          ? undefined
+          : "Stripe reconciliation failed; automatic retry queued.";
         c.nextCheckAt = new Date(
-          now.getTime() + (c.status === "complete" ? 300000 : 60000),
+          reconciled ? nextReconciliationAt(s, c, now) : now.getTime() + 60000,
         ).toISOString();
       });
     }

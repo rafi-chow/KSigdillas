@@ -19,9 +19,56 @@ import {
   stripeApiVersion,
   stripeGateway,
   assertStripePrice,
+  nextReconciliationAt,
 } from "../src/lib/payments/stripe";
 import { standings } from "../src/lib/operations/service";
 before(testEnvironment);
+test("settled orders use a daily fallback, enter fast admission checks, and keep unresolved payments fast", () => {
+  const store = new MemoryStore();
+  const attempt = {
+    id: "synthetic",
+    orderId: "synthetic",
+    status: "complete",
+  } as import("../src/lib/operations/model").CheckoutAttempt;
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, now),
+    now.getTime() + 86400000,
+  );
+  const before = new Date("2026-11-19T17:59:00-06:00");
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, before),
+    Date.parse("2026-11-19T18:00:00-06:00"),
+  );
+  const during = new Date("2026-11-19T18:00:00-06:00");
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, during),
+    during.getTime() + 300000,
+  );
+  const after = new Date("2026-11-19T21:00:00-06:00");
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, after),
+    after.getTime() + 86400000,
+  );
+  store.state.refunds.push({
+    id: "pending",
+    orderId: "synthetic",
+    ticketIds: [],
+    feeCents: 0,
+    amountCents: 1000,
+    reason: "Synthetic",
+    status: "pending",
+    createdAt: now.toISOString(),
+  });
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, after),
+    after.getTime() + 300000,
+  );
+  attempt.status = "open";
+  assert.equal(
+    nextReconciliationAt(store.state, attempt, after),
+    after.getTime() + 60000,
+  );
+});
 test("official Stripe SDK serializes the pinned embedded Checkout contract and rejects a wrong catalog before charging", async () => {
   let createCalls = 0;
   let wrong = false;
