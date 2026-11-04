@@ -35,6 +35,12 @@ export default function PrivacyPage() {
         Hosting changes will be reflected here before launch.
       </p>
       <p>
+        Brevo may add a small image and rewrite email links to measure opens and
+        clicks. We enable anonymous reporting for these statistics and request
+        no contact-level pixel tracking. Delivery and bounce reports remain
+        linked to recipients so we can help with missing tickets.
+      </p>
+      <p>
         Authorized event staff have access appropriate to their roles. Brother
         contribution and ticket-seller reports are private. Public standings
         show chapter totals, not purchaser emails or individual brother

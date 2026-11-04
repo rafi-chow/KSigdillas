@@ -38,6 +38,8 @@ export function brevoPayload(message: Message, key: string) {
   // inline ticket links and attach the QR PNGs without broken cid image tags.
   return {
     sender: { email, name: "KSigdillas Tickets" },
+    // This requests anonymized reporting, not removal of Brevo's open pixel.
+    // The account's anonymous tracking setting also covers click reporting.
     to: [{ email: message.to, contactPixelTrackingConsent: false }],
     replyTo: { email: eventConfig.contactEmail, name: "KSigdillas support" },
     subject: message.subject,
