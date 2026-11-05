@@ -33,6 +33,18 @@ export async function POST(request: NextRequest) {
   try {
     const store = getStore();
     await receiveStripeEvent(store, event);
+    // Signature-verified transport evidence only; no customer payload or tokens.
+    console.log(
+      JSON.stringify({
+        kind: "stripe-webhook-received",
+        eventId: event.id,
+        type: event.type,
+        livemode: event.livemode,
+        configurationProbe:
+          (event.data.object as { metadata?: Record<string, string> }).metadata
+            ?.ksigdillas_setup === "unpaid-configuration-check",
+      }),
+    );
     // Acknowledge only durable receipt. The native worker handles recovery and
     // delivery independently of this request and its execution limit.
     return NextResponse.json({ received: true });

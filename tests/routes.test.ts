@@ -117,3 +117,33 @@ test("email callback and scheduler authentication fail closed; authenticated hea
   assert.equal(health.status, 503);
   assert.equal((await health.text()).includes("@"), false);
 });
+test("independent monitor credentials can read health but cannot run maintenance", async () => {
+  process.env.MONITORING_HEALTH_SECRET = "synthetic-read-only-health-".padEnd(
+    40,
+    "x",
+  );
+  const headers = {
+    Authorization: `Bearer ${process.env.MONITORING_HEALTH_SECRET}`,
+  };
+  for (const method of ["GET", "POST"]) {
+    const denied = await jobs(
+      new NextRequest("https://event.example.test/api/jobs", {
+        method,
+        headers,
+      }),
+    );
+    assert.equal(denied.status, 401);
+    const health = await jobs(
+      new NextRequest(
+        "https://event.example.test/api/jobs?health=true&strict=true",
+        { method, headers },
+      ),
+    );
+    // Authentication passed; this test deliberately disables storage.
+    assert.equal(health.status, 503);
+    assert.deepEqual(await health.json(), {
+      error: "Maintenance unavailable.",
+    });
+    assert.equal(health.headers.get("Cache-Control"), "no-store");
+  }
+});

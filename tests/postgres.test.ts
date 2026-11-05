@@ -49,6 +49,90 @@ async function freshStore() {
   await s.migrate();
   return s;
 }
+test("SQL minute-worker probe wakes only actionable queues and expired leases outside event week", async () => {
+  const db = await freshStore();
+  const clock = new Date("2026-11-05T18:01:00Z");
+  const later = new Date(clock.getTime() + 60000).toISOString();
+  try {
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    await db.recordMaintenanceProbe(clock);
+    assert.equal(maintenanceHealth(await db.read(), clock).healthy, true);
+    assert.equal(
+      maintenanceHealth(await db.read(), new Date(clock.getTime() + 360000))
+        .healthy,
+      false,
+    );
+    // A delayed old invocation cannot move the heartbeat backwards.
+    await db.recordMaintenanceProbe(new Date(clock.getTime() - 60000));
+    assert.equal(
+      maintenanceHealth(await db.read(), clock).lastSuccess,
+      clock.toISOString(),
+    );
+    await db.transaction((s) => {
+      const order = createOrder(
+        s,
+        {
+          requestKey: randomUUID(),
+          email: "probe@example.test",
+          attendees: [{ name: "Queue buyer", tier: "basic", teamId: "axo" }],
+        },
+        "test",
+        "test",
+        clock,
+      );
+      fulfillOrder(s, order.id, 1000, "test", clock);
+    });
+    assert.equal(await db.maintenanceDue(clock, false), true);
+    await db.transaction((s) => {
+      s.jobs[0].nextAttemptAt = later;
+    });
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    await db.transaction((s) => {
+      s.jobs[0].nextAttemptAt = clock.toISOString();
+      s.jobs[0].uncertain = true;
+    });
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    await db.transaction((s) => {
+      s.jobs[0].status = "sending";
+      s.jobs[0].leaseUntil = later;
+    });
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    assert.equal(await db.maintenanceDue(new Date(later), false), true);
+    await db.transaction((s) => {
+      s.jobs[0].status = "sent";
+      s.providerEvents.push({
+        id: "evt_queue_probe",
+        objectId: "cs_queue_probe",
+        type: "checkout.session.completed",
+        status: "pending",
+        attempts: 0,
+        nextAttemptAt: clock.toISOString(),
+        createdAt: clock.toISOString(),
+        leaseUntil: later,
+      });
+    });
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    assert.equal(await db.maintenanceDue(new Date(later), false), true);
+    await db.transaction((s) => {
+      s.providerEvents[0].status = "review";
+      s.checkouts.push({
+        id: "queue-checkout",
+        orderId: s.orders[0].id,
+        sessionId: "cs_queue_probe",
+        mode: "embedded",
+        status: "complete",
+        createdAt: clock.toISOString(),
+        nextCheckAt: later,
+        accountId: "acct_synthetic",
+        livemode: false,
+      });
+    });
+    assert.equal(await db.maintenanceDue(clock, false), false);
+    assert.equal(await db.maintenanceDue(new Date(later), false), true);
+  } finally {
+    await db.close();
+  }
+});
 test("maintenance storage deadline rolls back a mutation before commit", async () => {
   const bounded = new PgStore(pg.url, Date.now() + 100);
   const id = `deadline-${randomUUID()}`;

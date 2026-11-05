@@ -10,14 +10,100 @@ import {
 import { createOrder, fulfillOrder } from "../src/lib/operations/service";
 import { deliverDue } from "../src/lib/email/delivery";
 import {
-  activeMaintenance,
   scheduledPassDue,
   maintenanceHealth,
   runMaintenance,
+  scheduledMaintenanceDue,
+  maintenanceWorkDue,
 } from "../src/lib/jobs/maintenance";
+import { startCheckout, receiveStripeEvent } from "../src/lib/payments/stripe";
 import { withinBudget } from "../src/lib/jobs/budget";
 import scheduled from "../netlify/functions/maintenance";
+import { purchaseTerms } from "../src/lib/policies";
 before(testEnvironment);
+test("presale and post-event work wakes the minute worker without a browser or duplicate fulfillment", async () => {
+  for (const at of ["2026-11-05T18:01:00Z", "2026-11-12T18:01:00Z"]) {
+    const clock = new Date(at);
+    const store = new MemoryStore();
+    const stripe = fakeStripe();
+    assert.equal(await scheduledMaintenanceDue(store, clock), false);
+    await startCheckout(
+      store,
+      {
+        requestKey: randomUUID(),
+        email: "presale@example.test",
+        termsVersion: purchaseTerms.version,
+        attendees: [{ name: "Presale buyer", tier: "basic", teamId: "axo" }],
+      },
+      "embedded",
+      stripe.gateway,
+      clock,
+    );
+    const sessionId = store.state.checkouts[0].sessionId!;
+    stripe.pay(sessionId);
+    await receiveStripeEvent(
+      store,
+      stripe.event("evt_presale", sessionId),
+      clock,
+    );
+    assert.equal(await scheduledMaintenanceDue(store, clock), true);
+    let sent = 0;
+    for (let minute = 0; minute < 2; minute++) {
+      await runMaintenance(store, {
+        source: "scheduled",
+        now: new Date(clock.getTime() + minute * 60000),
+        gateway: stripe.gateway,
+        delivery: async () => {
+          sent++;
+          return "presale-email";
+        },
+      });
+    }
+    assert.equal(store.state.orders[0].status, "paid");
+    assert.equal(store.state.tickets.length, 1);
+    assert.equal(store.state.ledger.length, 1);
+    assert.equal(store.state.jobs[0].status, "sent");
+    assert.equal(sent, 1);
+    await receiveStripeEvent(
+      store,
+      stripe.event("evt_presale", sessionId),
+      clock,
+    );
+    assert.equal(store.state.providerEvents.length, 1);
+    assert.equal(
+      await scheduledMaintenanceDue(store, new Date(clock.getTime() + 120000)),
+      false,
+    );
+    await store.transaction((s) => {
+      s.jobs[0].status = "queued";
+      s.jobs[0].nextAttemptAt = "2026-12-01T18:01:00.000Z";
+    });
+    assert.equal(
+      await scheduledMaintenanceDue(store, new Date("2026-12-01T18:01:00Z")),
+      true,
+    );
+  }
+});
+test("idle cadence ignores future work and held sends; expired leases still get recovery", async () => {
+  const store = queued(1);
+  const clock = new Date("2026-11-05T18:01:00Z");
+  const job = store.state.jobs[0];
+  assert.equal(maintenanceWorkDue(store.state, clock), false);
+  job.nextAttemptAt = clock.toISOString();
+  assert.equal(maintenanceWorkDue(store.state, clock), true);
+  job.uncertain = true;
+  assert.equal(maintenanceWorkDue(store.state, clock), false);
+  job.status = "sending";
+  job.leaseUntil = new Date(clock.getTime() - 1).toISOString();
+  assert.equal(maintenanceWorkDue(store.state, clock), true);
+  assert.equal(
+    await scheduledMaintenanceDue(
+      new MemoryStore(),
+      new Date("2026-11-05T18:15:00Z"),
+    ),
+    true,
+  );
+});
 function queued(count: number) {
   const store = new MemoryStore();
   for (let i = 0; i < count; i++) {
@@ -180,7 +266,7 @@ test("manual work cannot mask a missing scheduler; liveness expires at the confi
     maintenanceHealth(store.state, new Date(now.getTime() + 6 * 60000)).healthy,
     false,
   );
-  assert.equal(activeMaintenance(now), true);
+  assert.equal(scheduledPassDue(new Date("2026-11-16T18:01:00Z")), false);
   assert.equal(scheduledPassDue(new Date("2026-12-01T12:15:00Z")), true);
   assert.equal(scheduledPassDue(new Date("2026-12-01T12:16:00Z")), false);
 });

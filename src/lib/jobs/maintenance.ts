@@ -13,20 +13,54 @@ import {
   type StripeGateway,
 } from "../payments/stripe";
 
-export function activeMaintenance(now = new Date()) {
+export function scheduledPassDue(now = new Date()) {
+  // Due payment/email work wakes every minute; otherwise only housekeeping runs.
+  return now.getUTCMinutes() % 15 === 0;
+}
+export function maintenanceWorkDue(
+  state: State,
+  now = new Date(),
+  refundWrites = stripeRefundWriteEnabled(),
+) {
+  const due = (at: string) => Date.parse(at) <= now.getTime();
+  const available = (lease?: string) => !lease || due(lease);
   return (
-    now.getTime() >= Date.parse("2026-11-15T00:00:00-06:00") &&
-    now.getTime() < Date.parse("2026-11-22T00:00:00-06:00")
+    state.jobs.some(
+      (j) =>
+        (j.status === "sending" && j.leaseUntil && due(j.leaseUntil)) ||
+        (j.status !== "sent" &&
+          !j.uncertain &&
+          j.attempts < 8 &&
+          due(j.nextAttemptAt) &&
+          available(j.leaseUntil)),
+    ) ||
+    state.providerEvents.some(
+      (e) =>
+        e.status === "pending" &&
+        due(e.nextAttemptAt) &&
+        available(e.leaseUntil),
+    ) ||
+    state.checkouts.some(
+      (c) =>
+        Boolean(c.sessionId) && due(c.nextCheckAt) && available(c.leaseUntil),
+    ) ||
+    (refundWrites && state.refunds.some((r) => r.status === "requested"))
   );
 }
-export function scheduledPassDue(now = new Date()) {
-  return activeMaintenance(now) || now.getUTCMinutes() % 15 === 0;
+export async function scheduledMaintenanceDue(store: Store, now = new Date()) {
+  if (scheduledPassDue(now)) return true;
+  const refundWrites = stripeRefundWriteEnabled();
+  return store.maintenanceDue
+    ? store.maintenanceDue(now, refundWrites)
+    : maintenanceWorkDue(await store.read(), now, refundWrites);
 }
 export function maintenanceHealth(state: State, now = new Date()) {
-  const heartbeat = state.attempts.find(
-    (a) => a.id === "maintenance-heartbeat",
-  );
-  const allowance = activeMaintenance(now) ? 5 * 60000 : 35 * 60000;
+  const heartbeat = state.attempts
+    .filter((a) =>
+      ["maintenance-heartbeat", "maintenance-probe-heartbeat"].includes(a.id),
+    )
+    .sort((a, b) => b.resetsAt.localeCompare(a.resetsAt))[0];
+  const allowance = 5 * 60000;
   const healthy = Boolean(
     heartbeat && Date.parse(heartbeat.resetsAt) >= now.getTime() - allowance,
   );
@@ -47,7 +81,12 @@ export function maintenanceHealth(state: State, now = new Date()) {
     ).length +
     state.refunds.filter((r) => ["review", "failed"].includes(r.status))
       .length +
-    state.checkouts.filter((c) => Boolean(c.error)).length;
+    state.checkouts.filter(
+      (c) =>
+        Boolean(c.error) ||
+        (Boolean(c.sessionId) &&
+          Date.parse(c.nextCheckAt) < now.getTime() - 300000),
+    ).length;
   return {
     healthy,
     lastSuccess: heartbeat?.resetsAt ?? null,

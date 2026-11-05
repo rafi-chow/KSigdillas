@@ -6,6 +6,7 @@ import { initialState } from "./rules";
 export interface Store {
   read(): Promise<State>;
   transaction<T>(fn: (state: State) => T | Promise<T>): Promise<T>;
+  maintenanceDue?(now: Date, refundWrites: boolean): Promise<boolean>;
 }
 // One event and a few hundred guests: serialize short mutations in Postgres.
 // Never make network/provider calls inside this transaction.
@@ -18,7 +19,7 @@ export class PgStore implements Store {
     this.pool = new Pool({
       connectionString: url,
       max: 5,
-      connectionTimeoutMillis: deadline ? 1000 : 10000,
+      connectionTimeoutMillis: deadline ? 3000 : 10000,
       statement_timeout: deadline ? 1000 : 15000,
       lock_timeout: deadline ? 1000 : 10000,
     });
@@ -100,6 +101,62 @@ export class PgStore implements Store {
     } catch (e) {
       await client.query("ROLLBACK");
       throw e;
+    } finally {
+      client.release();
+    }
+  }
+  // The minute trigger needs only a queue-existence check, not attendee records.
+  async maintenanceDue(now: Date, refundWrites: boolean) {
+    const client = await this.pool.connect();
+    try {
+      const result = await this.query(
+        client,
+        `
+        SELECT EXISTS (
+          SELECT 1 FROM event_ops_jobs WHERE
+            ((payload->>'status' = 'sending' AND payload->>'leaseUntil' <= $1)
+            OR (payload->>'status' <> 'sent'
+              AND COALESCE((payload->>'uncertain')::boolean, false) = false
+              AND (payload->>'attempts')::int < 8
+              AND payload->>'nextAttemptAt' <= $1
+              AND (payload->>'leaseUntil' IS NULL OR payload->>'leaseUntil' <= $1)))
+          UNION ALL
+          SELECT 1 FROM "event_ops_providerEvents" WHERE
+            payload->>'status' = 'pending' AND payload->>'nextAttemptAt' <= $1
+            AND (payload->>'leaseUntil' IS NULL OR payload->>'leaseUntil' <= $1)
+          UNION ALL
+          SELECT 1 FROM event_ops_checkouts WHERE
+            payload->>'sessionId' IS NOT NULL AND payload->>'nextCheckAt' <= $1
+            AND (payload->>'leaseUntil' IS NULL OR payload->>'leaseUntil' <= $1)
+          UNION ALL
+          SELECT 1 FROM event_ops_refunds WHERE
+            $2::boolean AND payload->>'status' = 'requested'
+        ) AS due
+      `,
+        [now.toISOString(), refundWrites],
+      );
+      return result.rows[0].due as boolean;
+    } finally {
+      client.release();
+    }
+  }
+  // Separate scheduler telemetry: no financial/attendee rows or revision changes.
+  async recordMaintenanceProbe(now: Date) {
+    const client = await this.pool.connect();
+    try {
+      await this.query(
+        client,
+        `
+        INSERT INTO event_ops_attempts (id, payload)
+        VALUES ('maintenance-probe-heartbeat', jsonb_build_object(
+          'id', 'maintenance-probe-heartbeat', 'count', 1, 'resetsAt', $1::text))
+        ON CONFLICT (id) DO UPDATE SET payload = jsonb_build_object(
+          'id', 'maintenance-probe-heartbeat',
+          'count', (event_ops_attempts.payload->>'count')::int + 1,
+          'resetsAt', GREATEST(event_ops_attempts.payload->>'resetsAt', $1::text))
+      `,
+        [now.toISOString()],
+      );
     } finally {
       client.release();
     }

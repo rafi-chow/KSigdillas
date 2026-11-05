@@ -7,7 +7,11 @@ export const maxDuration = 30;
 export async function POST(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer /, "");
   const headers = { "Cache-Control": "no-store" };
-  if (!secretMatches(token, process.env.MAINTENANCE_JOB_SECRET))
+  const healthOnly = request.nextUrl.searchParams.get("health") === "true";
+  if (
+    !secretMatches(token, process.env.MAINTENANCE_JOB_SECRET) &&
+    !(healthOnly && secretMatches(token, process.env.MONITORING_HEALTH_SECRET))
+  )
     return NextResponse.json(
       { error: "Unauthorized." },
       { status: 401, headers },
@@ -22,10 +26,15 @@ export async function POST(request: NextRequest) {
     Date.now() + 24000,
   );
   try {
-    if (request.nextUrl.searchParams.get("health") === "true") {
+    if (healthOnly) {
       const health = maintenanceHealth(await store.read());
       return NextResponse.json(health, {
-        status: health.healthy ? 200 : 503,
+        status:
+          health.healthy &&
+          (request.nextUrl.searchParams.get("strict") !== "true" ||
+            !health.attentionRequired)
+            ? 200
+            : 503,
         headers,
       });
     }

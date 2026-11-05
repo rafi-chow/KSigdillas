@@ -12,8 +12,9 @@ export function cleanupTransient(s: State, now = new Date()) {
   );
   s.attempts = s.attempts.filter(
     (attempt) =>
-      attempt.id === "maintenance-heartbeat" ||
-      Date.parse(attempt.resetsAt) > now.getTime() - day,
+      ["maintenance-heartbeat", "maintenance-probe-heartbeat"].includes(
+        attempt.id,
+      ) || Date.parse(attempt.resetsAt) > now.getTime() - day,
   );
   return before - s.sessions.length - s.attempts.length;
 }
