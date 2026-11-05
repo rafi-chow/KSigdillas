@@ -1,5 +1,7 @@
 # Finish plan: design, Netlify, and Stripe handoff
 
+**November 5 continuation:** [Post-webhook finish and production acceptance plan](POST_WEBHOOK_FINISH_PLAN_2026-11-05.md) is the current execution sequence. The owner reports the URL edit complete; signed delivery remains unverified. It records fresh checks and supersedes older status, worker-cadence and live-test-purchase instructions.
+
 **Latest implementation status:** [Netlify handoff verification](NETLIFY_HANDOFF_2026-11-03.md) records the deployed site, current tests and remaining external gates. The planning snapshots below are retained as history.
 
 Updated November 3, 2026. **Planning only:** this revision changes documentation, not application code, accounts, or deployments. This is the current execution order; earlier plans remain supporting requirements and historical evidence.

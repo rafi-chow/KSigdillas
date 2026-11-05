@@ -1,5 +1,7 @@
 # Full launch verification plan
 
+**November 5 continuation:** [Post-webhook finish and production acceptance plan](POST_WEBHOOK_FINISH_PLAN_2026-11-05.md) is the current execution sequence. The owner reports the URL edit complete; signed delivery remains unverified. It records fresh checks and supersedes older status, worker-cadence and live-test-purchase instructions.
+
 **Latest planned additions:** [Finish to webhook handoff](FINISH_TO_WEBHOOK_HANDOFF_PLAN.md#5-verification-before-the-owner-handoff) adds design/copy review, native Netlify worker deadlines, credit measurement, final-origin email checks, migration acceptance, and a clear separation between pre-handoff tests and actual Stripe delivery after cutover. These additions have not been run. Existing scenarios below remain required where applicable.
 
 **Current execution evidence:** [November 3 report](LAUNCH_VERIFICATION_2026-11-03.md) records 85 automated cases, 26 desktop/mobile browser cases, typecheck/lint and both webpack/Netlify local builds passing. The matrix below remains the full acceptance specification; only those explicitly evidenced in the report are complete. Real callbacks/paid checkout, scheduler/alerts, phones, organizer evidence and measured Netlify runtime/credit acceptance remain open. Historical “planned, not run” status below is superseded for the implemented automated cases, not for external acceptance.

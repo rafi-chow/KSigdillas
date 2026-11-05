@@ -1,5 +1,7 @@
 # Netlify implementation and handoff — November 3, 2026
 
+**November 5 continuation:** [Post-webhook finish and production acceptance plan](POST_WEBHOOK_FINISH_PLAN_2026-11-05.md) is the current execution sequence. The owner reports the URL edit complete; signed delivery remains unverified. It records fresh checks and supersedes older status, worker-cadence and live-test-purchase instructions.
+
 **Latest product update:** [Steak package approval and verification](STEAK_PACKAGE_2026-11-04.md) records the now-accepted 18 oz bag, production enablement and tests. Earlier pending-steak references are historical.
 
 **November 4 update:** [The modern public UI release](MODERN_UI_2026-11-04.md) supersedes the design/deployment version below. It retains the red KSigdillas identity and animated cheese, with 96 automated and 32 browser checks passing. Its additional publishes require reassessing the credit reserve; external launch gates remain open.
