@@ -1,13 +1,15 @@
 # KSigdillas event-day runbook
 
-**Latest release:** https://ksigdillas.netlify.app is deployed with sales closed. See [current verification and remaining launch gates](NETLIFY_HANDOFF_2026-11-03.md). Native maintenance runs without a browser; independent alerting and the named event operator still need acceptance.
+**November 5 preparation:** [Current release and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) records minute-by-minute due work, five-minute heartbeat checks and read-only monitor access.
+
+**Latest release:** https://ksigdillas.netlify.app is deployed with sales closed. See [current verification and remaining launch gates](GO_LIVE_PREPARATION_2026-11-05.md). Native maintenance runs without a browser; independent monitoring delivered a real incident and automatic recovery to the designated operator inbox.
 
 Scoring instructions below follow the packet; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including organizer acceptance of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
 
 Current release status: event operations, Stripe integration code, brother
 tracking and Brevo delivery are deployed. The verified sender, real delivery
-callback and native scheduler passed production checks. Independent monitoring,
-organizer evidence, Stripe cutover/payment acceptance and physical phone
+callback, native scheduler and independent alert/recovery delivery passed production checks.
+Organizer evidence, Stripe cutover/payment acceptance and physical phone
 acceptance remain launch gates; see the current handoff above. Do not use local
 preview credentials on a public deployment.
 
@@ -48,9 +50,9 @@ attribution with a reason. Review any finalized attendance result flagged afterw
 For verified cash, organizer enters the buyer email and each attendee's name,
 tier, and optional team, verifies the amount received, then issues tickets. It
 creates the order, tickets, points, and email job together. Check in the tickets
-once and issue the wristbands. Once Stripe service acceptance is complete, guests
-can use the same website checkout at door prices and pay their own card details.
-The buyer pays the approved processing charge. Do not claim card purchases work
+once and issue the wristbands. Online presale closes at 6 PM while online door-price IDs are unconfigured.
+Cash door admission remains $12/$18. Do not promise online door checkout unless
+that separate catalog and cutoff behavior have been configured and verified. Do not claim card purchases work
 while new Stripe sales are disabled. Record the selected brother for cash sales
 when known; a cash sale creates no processing fee.
 
@@ -117,14 +119,18 @@ exceed the verified amount/packages. Keep the report and CSV private.
   restore only into an empty recovery database using the private backup and
   matching encryption key. Compare counts/funds/points before resuming writes.
 - A failed maintenance job or `attentionRequired > 0` requires organizer review.
-  Configure the external monitor to notify the designated operator; no notification
-  subscription is created by application code.
+  Better Stack Free sends alerts to `chowdhury.rafi01@gmail.com`; the public-site
+  monitor runs every five minutes and strict health every three minutes. An actual
+  monitor-only incident and automatic recovery reached that inbox on November 5.
+  Open the incident, check Netlify function logs and the staff recovery view, and
+  resolve the cause. Never mark a payment paid based only on an alert or email.
 - Independently check the authenticated health endpoint for a missing healthy
   worker heartbeat. A scheduler that never runs cannot report its own failure.
 
 ## Close and retention
 
-Close sales at 9 PM, reconcile cash and provider records, finalize attendance,
+Online presale closes at 6 PM while no online door-price IDs are configured;
+close event-day cash admission at 9 PM. Reconcile cash and provider records, finalize attendance,
 review flagged awards, and export the totals/audit history for the organizer.
 Funds raised exclude service fees and taxes and are not a claim of money already
 transferred to Movember. Keep private attendee exports only as long as needed for
@@ -135,7 +141,7 @@ cutover/reconciliation.
 ## Netlify release, monitoring and rollback
 
 - Use the final HTTPS origin above for organizer and guest entry points. Staff credentials and the encryption recovery key are private; never copy preview credentials into production.
-- The native trigger is every minute; full work runs each minute November 15–21 Central and every 15 minutes otherwise. The authenticated `/api/jobs?health=true` endpoint reports scheduler liveness separately from outstanding business exceptions. Missing-heartbeat allowances are 5/35 minutes respectively. Monitor `attentionRequired` as well as HTTP status; the independent alert service still requires setup.
+- The native trigger checks due payment/email work every minute, including before and after event week. Empty queues record a lightweight probe heartbeat; housekeeping runs every 15 minutes. Automatic heartbeat freshness is five minutes. The configured external monitor uses `GET /api/jobs?health=true&strict=true` and the separate read-only `MONITORING_HEALTH_SECRET` in the Authorization header. This returns 503 for either stale scheduling or business attention; it never runs maintenance. The write-capable maintenance secret stays private. See [both monitors and acceptance evidence](GO_LIVE_PREPARATION_2026-11-05.md).
 - Pending sessions/provider failures retain rapid retry; settled orders use daily fallback polling, entering five-minute checks at admission hours. Unresolved refunds/disputes keep five-minute reconciliation. Signed provider events continue to provide prompt updates.
 - Follow [the credit envelope](NETLIFY_CREDIT_BUDGET.md). Netlify billing notifications begin at 50% usage according to its documentation; designate the recipient/operator and verify delivery. Recheck actual balance before opening sales and before event day. Do not purchase a plan or credit pack automatically.
 - Before rollback, keep/pause sales and preserve valid tickets, check-ins, provider events and the current database. Restore only an explicitly payment-compatible tested deployment in Netlify; never overwrite live purchases with the zero-order prelaunch snapshot. Retain database URL, encryption key, provider credentials and current callback secret. Inspect queue recovery and private cache behavior after rollback.

@@ -1,4 +1,34 @@
-# Netlify credit budget — updated November 4, 2026
+# Netlify credit budget — updated November 5, 2026
+
+## November 5 measured update
+
+The signed-in billing page now reports **138 credits consumed / 162 remaining** before this preparation release: nine production publishes/135 credits, 3,477 requests/0.7 credits, compute/1.2 and bandwidth/1.1. It explicitly warns of delayed consumption reporting. The new successful production deploy `6aed0c70db5c619b1e5c802d` is the tenth release, so reserve another 15 credits: approximately **153 used / 147 remaining** pending ledger refresh. No payment method, upgrade or credit purchase was added.
+
+The new worker records inexpensive minute probes and wakes full work only for due queues or 15-minute housekeeping, including during event week. From 23:11–23:32 UTC, 22 automatic invocations included 20 idle probes averaging 142.09 ms (maximum 202.95 ms) and two empty housekeeping passes at 675.64 and 623.10 ms. These are a short sample, not established traffic-weighted averages. The old one-second event-week full-pass model below is historical. A 23:29 UTC billing refresh still showed nine charged publishes and 138 credits used; requests had advanced to 3,498, so the tenth publish must remain reserved outside that delayed display.
+
+[Netlify's billing FAQ](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/billing-faq-for-credit-based-plans/#how-do-rollbacks-work-with-this-new-pricing-plan) explicitly says republishing a previous production deploy for rollback costs no credits. **Correct the earlier assumption that rollback itself needs another 15 credits.** A newly built forward fix or final sales-activation release still costs 15 each. Preserve the known good deployment and never restore an old database over purchases.
+
+A remaining-period envelope through November 21, using approximately 16.4 days, is:
+
+| Item                             | Explicit assumption                                          |    Credits |
+| -------------------------------- | ------------------------------------------------------------ | ---------: |
+| Usage to date plus tenth publish | Observed rounded 138 + 15                                    |     153.00 |
+| Future idle probes               | 22,041 × 0.15 s × 1 GB                                       |       9.18 |
+| Future housekeeping              | 1,575 × 0.75 s × 1 GB                                        |       3.28 |
+| Additional due-work passes       | 500 × 2 s × 1 GB                                             |       2.78 |
+| Independent monitors             | Health every 3 min at 0.15 s, homepage every 5 min at 0.05 s |       3.94 |
+| Other foreground work            | 2,500 × 0.15 s × 1 GB                                        |       1.04 |
+| Future served bandwidth          | 0.5 GB across the event/site                                 |      10.00 |
+| Future web requests              | 40,000, including monitor traffic                            |       8.00 |
+| Other team projects              | Additional future allowance                                  |       3.00 |
+| Final activation publish         | One build after accepted launch configuration                |      15.00 |
+| Existing-deploy rollback         | Provider-documented free rollback                            |       0.00 |
+| **Projected team total**         |                                                              | **209.22** |
+| **Projected unused credits**     | 30.3% of 300                                                 |  **90.78** |
+
+This model **nominally meets the 210-credit internal ceiling by only 0.78 credits**. It is not evidence of a robust reserve: runtime, actual monitoring setup/frequency, other-site traffic and event attendance are still assumptions. An additional GB adds 20 credits, an extra forward release adds 15, and slower private queries can erase the margin. Re-measure and refresh the ledger before activation; reduce the model or obtain an explicit budget decision if the assumptions are not credible. Do not claim the 30% reserve is established by these few invocations. Monitoring and the operator response remain required.
+
+The original full-month envelope and historical evidence follow for comparison; they are not the current worker forecast.
 
 The signed-in team is on Free: 300 credits/month, with the displayed billing period October 22–November 21. Two other sites share this allowance. Preserve at least 90 unused credits; the internal ceiling is 210 total team credits.
 
@@ -16,17 +46,17 @@ For a conservative 31-day model, the minute platform trigger makes 44,640 invoca
 
 These are explicit assumptions, not observed event-month totals. The model includes monitoring traffic within the request/foreground-function allowances even though no independent monitor is configured yet.
 
-| Item | Assumption | Credits |
-| --- | --- | ---: |
-| Production publishing | Nine published releases, 15 each | 135.00 |
-| Served bandwidth | 2 GB | 40.00 |
-| Web requests | 100,000 across pages, callbacks, polling, schedule and monitor traffic | 20.00 |
-| Full maintenance passes | 12,384 × 1 second average × 1 GB allocation | 34.40 |
-| No-work schedule invocations | 32,256 × 0.15 seconds average × 1 GB | 13.44 |
-| Other function work | 10,000 × 0.5 seconds average × 1 GB | 13.89 |
-| Other team projects | Additional allowance; recheck their actual usage | 10.00 |
-| **Projected team usage** | | **266.73** |
-| **Unused allowance** | 11.1% of 300 | **33.27** |
+| Item                         | Assumption                                                             |    Credits |
+| ---------------------------- | ---------------------------------------------------------------------- | ---------: |
+| Production publishing        | Nine published releases, 15 each                                       |     135.00 |
+| Served bandwidth             | 2 GB                                                                   |      40.00 |
+| Web requests                 | 100,000 across pages, callbacks, polling, schedule and monitor traffic |      20.00 |
+| Full maintenance passes      | 12,384 × 1 second average × 1 GB allocation                            |      34.40 |
+| No-work schedule invocations | 32,256 × 0.15 seconds average × 1 GB                                   |      13.44 |
+| Other function work          | 10,000 × 0.5 seconds average × 1 GB                                    |      13.89 |
+| Other team projects          | Additional allowance; recheck their actual usage                       |      10.00 |
+| **Projected team usage**     |                                                                        | **266.73** |
+| **Unused allowance**         | 11.1% of 300                                                           |  **33.27** |
 
 Rates were checked against [Netlify's credit documentation](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/how-credits-work/). **This revised envelope fails the internal 30% reserve**, exceeding the 210-credit ceiling by 56.73 credits even at the assumed one-second full-pass average. At 1.5 seconds average per full pass, projected usage rises to 283.93 credits; at two seconds it reaches 301.13. The observed cold full pass was 1.52 seconds, so the one-second average is unproven. Continuous 18-second passes would exceed the allowance; a timeout bound is not a budget estimate. Reassess actual other-site usage, traffic and runtime before activation, and reduce/remeasure the model before claiming the reserve is satisfied. One extra publish costs 15 credits; an extra GB served costs 20. Avoid routine production publishes and leave at least one rollback/recovery option.
 

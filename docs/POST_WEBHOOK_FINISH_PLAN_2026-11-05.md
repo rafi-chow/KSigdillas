@@ -1,5 +1,7 @@
 # KSigdillas: finish and production acceptance after the webhook URL change
 
+**Preparation release published:** [November 5 implementation, fresh production checks and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) records the deployed worker/monitor improvements. The sequence below remains the finish checklist; completed items are distinguished in that release report.
+
 Updated November 5, 2026. This is the current execution plan. The user reports that the Stripe owner updated the destination URL. **The URL edit is reported complete; actual Stripe-to-Netlify delivery is not yet verified.** This planning/verification pass changes documentation only and leaves production sales and provider settings unchanged.
 
 The complete flow to prove is: guest chooses tickets → Stripe confirms payment → a signed event is durably recorded → one order/ticket set and correct chapter/brother credit are created → the background worker delivers the ticket email → staff admit each ticket once.

@@ -1,5 +1,7 @@
 # Netlify implementation and handoff — November 3, 2026
 
+**November 5 preparation release:** [Current deployed changes, fresh tests and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) supersedes the historical cadence, budget and monitoring status below.
+
 **November 5 continuation:** [Post-webhook finish and production acceptance plan](POST_WEBHOOK_FINISH_PLAN_2026-11-05.md) is the current execution sequence. The owner reports the URL edit complete; signed delivery remains unverified. It records fresh checks and supersedes older status, worker-cadence and live-test-purchase instructions.
 
 **Latest product update:** [Steak package approval and verification](STEAK_PACKAGE_2026-11-04.md) records the now-accepted 18 oz bag, production enablement and tests. Earlier pending-steak references are historical.
