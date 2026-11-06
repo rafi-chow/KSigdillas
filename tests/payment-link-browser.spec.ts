@@ -4,7 +4,7 @@ import { quietDevelopmentReloads } from "./e2e/isolation";
 test.beforeEach(quietDevelopmentReloads);
 const stripeLink = "https://buy.stripe.com/6oU4gz7Tugru8GeaOj2kw03";
 
-test("approved hosted checkout shows the current totals and preserves the Meat/Veggie selection", async ({
+test("all purchase buttons open the approved Stripe checkout directly", async ({
   page,
 }) => {
   await page.goto("/");
@@ -12,24 +12,27 @@ test("approved hosted checkout shows the current totals and preserves the Meat/V
   await expect(page.getByText("$17.20", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Buy tickets", exact: true }).first(),
-  ).toHaveAttribute("href", "/checkout");
-  await page.getByRole("link", { name: "Buy this ticket" }).nth(1).click();
-  await expect(page).toHaveURL(/\/checkout\?tier=meat$/);
-  await expect(page.getByText(/For Meat\/Veggie, add/)).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Continue to Stripe" }),
   ).toHaveAttribute("href", stripeLink);
-  await expect(page.getByText("Online sales are not open yet.")).toHaveCount(0);
-  await expect(
-    page.getByText(/Sales tax and processing fee included/),
-  ).toBeVisible();
+  const tierLinks = page.getByRole("link", { name: "Buy this ticket" });
+  await expect(tierLinks).toHaveCount(2);
+  for (const link of await tierLinks.all()) {
+    await expect(link).toHaveAttribute("href", stripeLink);
+  }
+  await page.route(stripeLink, (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<h1>Stripe checkout</h1>",
+    }),
+  );
+  await page.getByRole("link", { name: "Buy this ticket" }).nth(1).click();
+  await expect(page).toHaveURL(stripeLink);
 });
 
-test("hosted checkout remains accessible, private and within the mobile viewport", async ({
+test("homepage remains accessible and old checkout URLs redirect without caching", async ({
   page,
   request,
 }) => {
-  await page.goto("/checkout");
+  await page.goto("/");
   expect(
     (
       await new AxeBuilder({ page })
@@ -42,8 +45,12 @@ test("hosted checkout remains accessible, private and within the mobile viewport
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  const response = await request.get("/checkout");
-  expect(response.headers()["cache-control"]).toContain("no-store");
+  for (const path of ["/checkout", "/checkout?tier=meat"]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status()).toBe(307);
+    expect(response.headers().location).toBe(stripeLink);
+    expect(response.headers()["cache-control"]).toContain("no-store");
+  }
   await expect(
     page.getByRole("link", { name: "Ticket terms", exact: true }),
   ).toBeVisible();

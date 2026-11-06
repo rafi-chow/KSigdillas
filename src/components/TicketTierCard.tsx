@@ -66,7 +66,11 @@ export function TicketTierCard({
       </ul>
       <a
         className="tier-link"
-        href={`${ticketUrl}?tier=${name === "Basicdilla" ? "basic" : "meat"}`}
+        href={
+          ticketUrl.startsWith("/")
+            ? `${ticketUrl}?tier=${name === "Basicdilla" ? "basic" : "meat"}`
+            : ticketUrl
+        }
       >
         {canBuy ? "Buy this ticket" : "View ticket details"} <span>→</span>
       </a>

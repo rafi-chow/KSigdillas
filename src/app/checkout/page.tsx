@@ -1,5 +1,6 @@
 import { publicPrices, money } from "@/lib/policies";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { OrderForm } from "@/components/OrderForm";
 import { eventConfig } from "@/lib/eventConfig";
 import { getStore, operationsEnabled } from "@/lib/operations/store";
@@ -12,7 +13,6 @@ import {
 import { emptyState } from "@/lib/operations/model";
 import { checkoutAvailable } from "@/lib/payments/stripe";
 import {
-  currentPaymentLinkTotals,
   currentPaymentLinkUrl,
   paymentLinkAvailable,
 } from "@/lib/payments/paymentLink";
@@ -24,59 +24,7 @@ export default async function CheckoutPage({
 }) {
   const { tier } = await searchParams;
   const now = new Date();
-  if (paymentLinkAvailable(now)) {
-    return (
-      <main id="main-content" tabIndex={-1} className="ops-page">
-        <div className="shell ticket-page">
-          <Link href="/">← Back to KSigdillas</Link>
-          <section className="ops-card checkout-sheet">
-            <p className="eyebrow">November 19 · 6–9 PM</p>
-            <h1>TICKETS.</h1>
-            <p>
-              <strong>
-                {money(currentPaymentLinkTotals.basic)} Basicdilla /{" "}
-                {money(currentPaymentLinkTotals.meat)} Meat/Veggie.
-              </strong>{" "}
-              Sales tax and processing fee included.
-            </p>
-            <p>
-              Choose your tickets and supporting chapter on Stripe. You can also
-              credit the brother who sold you your ticket.
-            </p>
-            <p>
-              {tier === "meat"
-                ? "For Meat/Veggie, "
-                : "To choose Meat/Veggie, "}
-              add the Meat and Veggies Pass, then set Basic Pass to 0. Leave
-              both in the cart only if you want both tickets.
-            </p>
-            <a className="button button-dark" href={currentPaymentLinkUrl}>
-              Continue to Stripe <span aria-hidden="true">→</span>
-            </a>
-            <p>
-              Keep your Stripe receipt. Ticket QR codes are sent to your
-              purchase email after payment is confirmed. Each paid pass admits
-              one person.
-            </p>
-            <p>
-              Presale ends Thursday at 6 PM Central. Cash door tickets are $12
-              Basicdilla / $18 Meat/Veggie.
-            </p>
-            <p>
-              <Link href="/terms">Ticket terms</Link> ·{" "}
-              <Link href="/privacy">Privacy</Link>
-            </p>
-            <p>
-              Questions?{" "}
-              <a href={`mailto:${eventConfig.contactEmail}`}>
-                {eventConfig.contactEmail}
-              </a>
-            </p>
-          </section>
-        </div>
-      </main>
-    );
-  }
+  if (paymentLinkAvailable(now)) redirect(currentPaymentLinkUrl);
   const presaleEnded = now.getTime() >= saleStart;
   const eventEnded = now.getTime() >= saleEnd;
   let available = operationsEnabled() && checkoutAvailable(now);

@@ -12,6 +12,7 @@ import { publicPrices, money } from "@/lib/policies";
 import {
   paymentLinkAvailable,
   currentPaymentLinkTotals,
+  currentPaymentLinkUrl,
 } from "@/lib/payments/paymentLink";
 import { causeCopy, eventConfig, ticketTiers } from "@/lib/eventConfig";
 import styles from "./modern.module.css";
@@ -52,9 +53,10 @@ export default function Home() {
     hosted || (operationsEnabled() && checkoutAvailable() && salesWindowOpen());
   const prices = publicPrices();
   const online = hosted ? currentPaymentLinkTotals : prices.online;
+  const ticketUrl = hosted ? currentPaymentLinkUrl : eventConfig.ticketUrl;
   return (
     <main id="main-content" tabIndex={-1} className={styles.home}>
-      <HeroSection canBuy={canBuy} />
+      <HeroSection canBuy={canBuy} ticketUrl={ticketUrl} />
       <section
         className="tickets-section section"
         id="tickets"
@@ -71,7 +73,7 @@ export default function Home() {
               <TicketTierCard
                 key={tier.id}
                 {...tier}
-                ticketUrl={eventConfig.ticketUrl}
+                ticketUrl={ticketUrl}
                 canBuy={canBuy}
                 onlinePrice={online[tier.id]}
               />

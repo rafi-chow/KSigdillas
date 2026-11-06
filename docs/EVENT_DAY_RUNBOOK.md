@@ -4,7 +4,7 @@
 
 **November 5 preparation:** [Current release and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) records minute-by-minute due work, five-minute heartbeat checks and read-only monitor access.
 
-**Latest release:** https://ksigdillas.netlify.app is deployed with sales closed. See [current verification and remaining launch gates](GO_LIVE_PREPARATION_2026-11-05.md). Native maintenance runs without a browser; independent monitoring delivered a real incident and automatic recovery to the designated operator inbox.
+**Latest release:** https://ksigdillas.netlify.app offers the approved hosted Stripe Payment Link; embedded checkout remains disabled. See [current payment verification and remaining evidence](NEW_PAYMENT_LINK_2026-11-05.md). Native maintenance runs without a browser; independent monitoring delivered a real incident and automatic recovery to the designated operator inbox.
 
 Scoring instructions below follow the packet; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including organizer acceptance of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
 
@@ -20,7 +20,7 @@ preview credentials on a public deployment.
 - Organizer signs in at `/admin/leaderboard`; check-in staff use `/admin/check-in`.
   Provision individual access; verify the correct role on each phone.
 - Verify event clock and prices: Thursday November 19, 2026, 6–9 PM Central;
-  volleyball starts at 7 PM. Presale $10/$15 ends at 6 PM; door prices $12/$18.
+  volleyball starts at 7 PM. Online totals $11.58/$17.20 include tax and processing and end at 6 PM; ticket base allocations are $10/$15. Cash door prices are $12/$18.
 - Confirm production database, backup and separate encryption-key recovery,
   verified email sender, native Netlify maintenance heartbeat, and independent monitoring.
 - Test the actual event phones over HTTPS. Camera permission must be granted by
@@ -54,8 +54,7 @@ tier, and optional team, verifies the amount received, then issues tickets. It
 creates the order, tickets, points, and email job together. Check in the tickets
 once and issue the wristbands. Online presale closes at 6 PM while online door-price IDs are unconfigured.
 Cash door admission remains $12/$18. Do not promise online door checkout unless
-that separate catalog and cutoff behavior have been configured and verified. Do not claim card purchases work
-while new Stripe sales are disabled. Record the selected brother for cash sales
+that separate catalog and cutoff behavior have been configured and verified. The hosted link accepts the owner-configured online payment methods during presale. Record the selected brother for cash sales
 when known; a cash sale creates no processing fee.
 
 ## Brother contributions

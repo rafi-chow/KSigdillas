@@ -3,7 +3,13 @@ import { eventConfig } from "@/lib/eventConfig";
 import { QuesadillaArt } from "./CheeseArt";
 import { KappaSigmaMark } from "./KappaSigmaMark";
 
-export function HeroSection({ canBuy = false }: { canBuy?: boolean }) {
+export function HeroSection({
+  canBuy = false,
+  ticketUrl = eventConfig.ticketUrl,
+}: {
+  canBuy?: boolean;
+  ticketUrl?: string;
+}) {
   return (
     <header className="hero" id="top">
       <nav className="nav shell" aria-label="Main navigation">
@@ -30,7 +36,7 @@ export function HeroSection({ canBuy = false }: { canBuy?: boolean }) {
             <p>707 S Davis Dr · Arlington, Texas</p>
           </div>
           <div className="hero-actions">
-            <a className="button button-light" href={eventConfig.ticketUrl}>
+            <a className="button button-light" href={ticketUrl}>
               {canBuy ? "Buy tickets" : "Ticket details"}
               <ArrowRight size={18} aria-hidden="true" />
             </a>

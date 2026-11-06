@@ -1,5 +1,9 @@
 # Netlify credit budget — updated November 5, 2026
 
+## November 5 hosted-link and direct-button releases
+
+The hosted-link integration is the eleventh published build; the requested direct-to-Stripe button follow-up is the twelfth. Reserve 30 additional credits beyond the tenth-build baseline: approximately 183 used including rounded measured consumption, pending the delayed ledger. The eleventh release uses the activation publish already included in the 209.22-credit envelope below; the twelfth adds another 15, for a revised projected total of **224.22** and **75.78 unused (25.3%)**. This stays within Free’s 300 credits under the listed assumptions but misses the internal 30% reserve. No paid upgrade or credit purchase is authorized or made. Avoid optional further publications and review actual usage against the existing alerts.
+
 ## November 5 measured update
 
 The signed-in billing page now reports **138 credits consumed / 162 remaining** before this preparation release: nine production publishes/135 credits, 3,477 requests/0.7 credits, compute/1.2 and bandwidth/1.1. It explicitly warns of delayed consumption reporting. The new successful production deploy `6aed0c70db5c619b1e5c802d` is the tenth release, so reserve another 15 credits: approximately **153 used / 147 remaining** pending ledger refresh. No payment method, upgrade or credit purchase was added.

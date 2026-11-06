@@ -1,5 +1,7 @@
 # Go-live preparation — November 5, 2026
 
+**Historical preparation release:** the closed-sales state below was superseded by the [approved hosted Payment Link integration](NEW_PAYMENT_LINK_2026-11-05.md). Use that document for current prices, direct Stripe buttons and remaining purchase evidence.
+
 Application commit `6f4abf1` is published at https://ksigdillas.netlify.app, [Netlify deploy `6aed0c70db5c619b1e5c802d`](https://app.netlify.com/projects/ksigdillas/deploys/6aed0c70db5c619b1e5c802d). This is a closed-sales preparation release. Independent monitoring passed a real incident and recovery rehearsal. Final payment, device and organizer acceptance remain open below.
 
 ## Completed in this release

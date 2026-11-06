@@ -609,6 +609,9 @@
 .home :global(.leaderboard-section .section-heading > p:last-child) {
   color: #efd8d0;
 }
+.home :global(.leaderboard-loading) {
+  color: #efd8d0;
+}
 .home :global(.leaderboard-card) {
   border: 0;
   background: transparent;
