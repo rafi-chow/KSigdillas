@@ -4,6 +4,10 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import {
+  currentPaymentLinkId,
+  currentPaymentLinkPriceIds,
+} from "../src/lib/payments/paymentLink";
 import { PgStore } from "../src/lib/operations/store";
 import {
   addStaff,
@@ -174,7 +178,13 @@ async function main() {
     STRIPE_WEBHOOK: "",
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "",
     STRIPE_ACCOUNT_ID: "",
-    STRIPE_PAYMENT_LINK_ENABLED: "false",
+    STRIPE_PAYMENT_LINK_ENABLED: process.argv.includes("--payment-link")
+      ? "true"
+      : "false",
+    STRIPE_PAYMENT_LINK_ID: currentPaymentLinkId,
+    STRIPE_LINK_PRICE_BASIC: currentPaymentLinkPriceIds.basic,
+    STRIPE_LINK_PRICE_MEAT: currentPaymentLinkPriceIds.meat,
+    STRIPE_LINK_TAX_INCLUDED: "true",
     STRIPE_WEBHOOK_SECRET: "",
     EMAIL_PROVIDER: "",
     EMAIL_FROM: "",

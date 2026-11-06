@@ -214,6 +214,9 @@ async function handle(request: NextRequest, context: Context) {
             feeCents: user.role === "organizer" ? o.feeCents : undefined,
             refundedFeeCents:
               user.role === "organizer" ? o.refundedFeeCents : undefined,
+            taxCents: user.role === "organizer" ? o.taxCents : undefined,
+            refundedTaxCents:
+              user.role === "organizer" ? (o.refundedTaxCents ?? 0) : undefined,
             email: user.role !== "check-in" ? o.email : undefined,
             tickets: s.tickets
               .filter((t) => t.orderId === o.id)
@@ -291,8 +294,9 @@ async function handle(request: NextRequest, context: Context) {
       const input = z
         .object({
           id: z.string(),
-          ticketIds: z.array(z.string()).max(50),
+          ticketIds: z.array(z.string()).max(198),
           feeCents: z.number().int().min(0),
+          taxCents: z.number().int().min(0).default(0),
           reason: z.string().trim().min(1).max(300),
         })
         .strict()
@@ -314,7 +318,10 @@ async function handle(request: NextRequest, context: Context) {
         if (
           tickets.some((t) => !t) ||
           input.feeCents > order.feeCents - order.refundedFeeCents ||
-          tickets.reduce((n, t) => n + t!.baseCents, 0) + input.feeCents !==
+          input.taxCents > order.taxCents - (order.refundedTaxCents ?? 0) ||
+          tickets.reduce((n, t) => n + t!.baseCents, 0) +
+            input.feeCents +
+            input.taxCents !==
             refund.amountCents
         )
           throw new Error(
@@ -322,6 +329,7 @@ async function handle(request: NextRequest, context: Context) {
           );
         refund.ticketIds = input.ticketIds;
         refund.feeCents = input.feeCents;
+        refund.taxCents = input.taxCents;
         refund.reason = input.reason;
         refund.status = "pending";
         audit(s, user.id, "refund-allocated", refund.id, input.reason, now);

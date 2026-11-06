@@ -6,7 +6,7 @@ import { digest, opaqueToken, seal } from "../operations/crypto";
 import { audit, fulfillOrder } from "../operations/service";
 import { resolveBrother } from "../operations/brothers";
 import { checkoutConfig } from "./stripe";
-import { paymentLinkPrices } from "./paymentLink";
+import { includedPaymentLinkTax, paymentLinkPrices } from "./paymentLink";
 import { publicPrices } from "../policies";
 export function importPaymentLinkSession(
   s: State,
@@ -33,7 +33,6 @@ export function importPaymentLinkSession(
     !session.line_items ||
     session.line_items.has_more ||
     session.total_details?.amount_discount ||
-    session.total_details?.amount_tax ||
     session.total_details?.amount_shipping
   )
     throw new Error(
@@ -125,6 +124,7 @@ export function importPaymentLinkSession(
   const ticketIds: string[] = [];
   let baseCents = 0;
   let totalCents = 0;
+  let taxInclusive = true;
   const catalog: Record<string, { quantity: number; cents: number }> = {};
   const review: string[] = [
     "External Payment Link purchase: website terms acceptance was not recorded.",
@@ -142,13 +142,15 @@ export function importPaymentLinkSession(
       price.unit_amount !== rule.paidCents ||
       !Number.isSafeInteger(quantity) ||
       quantity < 1 ||
-      quantity > 50 ||
+      quantity > 99 ||
       item.amount_total !== quantity * rule.paidCents
     )
       throw new Error("Unknown Payment Link product, price, or quantity.");
     if (catalog[price.id])
       throw new Error("Repeated Payment Link product requires review.");
     catalog[price.id] = { quantity, cents: rule.paidCents };
+    taxInclusive =
+      taxInclusive && "taxInclusive" in rule && rule.taxInclusive === true;
     totalCents += item.amount_total;
     for (let n = 0; n < quantity; n++) {
       const id = randomUUID();
@@ -181,7 +183,7 @@ export function importPaymentLinkSession(
   }
   if (
     ticketIds.length === 0 ||
-    ticketIds.length > 50 ||
+    ticketIds.length > 198 ||
     totalCents !== session.amount_total
   )
     throw new Error("Payment Link total does not match the ticket catalog.");
@@ -189,6 +191,9 @@ export function importPaymentLinkSession(
     review.push(
       "Guest names need completion; preserve one ticket per paid unit.",
     );
+  const taxCents = includedPaymentLinkTax(session, taxInclusive);
+  if (totalCents - baseCents - taxCents < 0)
+    throw new Error("Stripe tax exceeds the reviewed ticket allocation.");
   const sellerBrotherId = sellerRaw ? resolveBrother(s, sellerRaw) : null;
   if (sellerRaw && !sellerBrotherId)
     review.push("Brother referral needs review.");
@@ -200,8 +205,8 @@ export function importPaymentLinkSession(
     source: "stripe",
     status: "pending",
     baseCents,
-    feeCents: totalCents - baseCents,
-    taxCents: 0,
+    feeCents: totalCents - baseCents - taxCents,
+    taxCents,
     totalCents,
     refundedBaseCents: 0,
     refundedFeeCents: 0,
@@ -222,7 +227,8 @@ export function importPaymentLinkSession(
     mode: "hosted",
     catalog,
     paymentLinkId: linkId,
-    includedFeeCents: totalCents - baseCents,
+    includedFeeCents: totalCents - baseCents - taxCents,
+    taxInclusive,
     sessionId: session.id,
     paymentId:
       typeof session.payment_intent === "string"

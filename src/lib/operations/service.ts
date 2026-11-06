@@ -694,6 +694,7 @@ export function refundTickets(
   operator: string,
   reason: string,
   now: Date,
+  taxCents = 0,
 ) {
   const order = s.orders.find((o) => o.id === orderId);
   if (!order) throw new Error("Order not found.");
@@ -707,7 +708,10 @@ export function refundTickets(
     !reason.trim() ||
     !Number.isSafeInteger(feeCents) ||
     feeCents < 0 ||
-    feeCents + order.refundedFeeCents > order.feeCents
+    feeCents + order.refundedFeeCents > order.feeCents ||
+    !Number.isSafeInteger(taxCents) ||
+    taxCents < 0 ||
+    taxCents + (order.refundedTaxCents ?? 0) > order.taxCents
   )
     throw new Error("Invalid refund details.");
   for (const ticketId of new Set(ticketIds)) {
@@ -739,6 +743,7 @@ export function refundTickets(
       );
   }
   order.refundedFeeCents += feeCents;
+  order.refundedTaxCents = (order.refundedTaxCents ?? 0) + taxCents;
   order.status =
     order.refundedBaseCents === order.baseCents
       ? "refunded"

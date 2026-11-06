@@ -11,6 +11,7 @@ type TicketTierCardProps = {
   featured?: boolean;
   ticketUrl: string;
   canBuy?: boolean;
+  onlinePrice?: number;
 };
 
 export function TicketTierCard({
@@ -22,6 +23,7 @@ export function TicketTierCard({
   featured,
   ticketUrl,
   canBuy = false,
+  onlinePrice,
 }: TicketTierCardProps) {
   const prices = publicPrices();
   const showOnlinePrice = !prices.door || canBuy;
@@ -38,7 +40,10 @@ export function TicketTierCard({
         {showOnlinePrice ? (
           <>
             <strong>
-              {money(prices.online[name === "Basicdilla" ? "basic" : "meat"])}
+              {money(
+                onlinePrice ??
+                  prices.online[name === "Basicdilla" ? "basic" : "meat"],
+              )}
             </strong>{" "}
             online total <span>· ${doorPrice} cash at the door</span>
           </>

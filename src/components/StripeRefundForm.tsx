@@ -13,6 +13,8 @@ export function StripeRefundForm({
     id: string;
     feeCents?: number;
     refundedFeeCents?: number;
+    taxCents?: number;
+    refundedTaxCents?: number;
     tickets: {
       id: string;
       name: string;
@@ -25,10 +27,12 @@ export function StripeRefundForm({
 }) {
   const [ids, setIds] = useState<string[]>([]);
   const [fee, setFee] = useState(0);
+  const [tax, setTax] = useState(0);
   const [reason, setReason] = useState("");
   const [preview, setPreview] = useState(false);
   const amount =
     fee +
+    tax +
     order.tickets
       .filter((t) => ids.includes(t.id))
       .reduce((n, t) => n + (t.baseCents ?? 0), 0);
@@ -44,6 +48,7 @@ export function StripeRefundForm({
           id: allocation?.id ?? order.id,
           ticketIds: ids,
           feeCents: fee,
+          ...(allocation ? { taxCents: tax } : {}),
           reason,
         });
         setPreview(false);
@@ -55,7 +60,7 @@ export function StripeRefundForm({
       {allocation && (
         <p>
           Confirmed Stripe refund: {money(allocation.amountCents)}. Select the
-          matching tickets and fee portion.
+          matching tickets, fee and tax portions.
         </p>
       )}
       {order.tickets
@@ -91,6 +96,22 @@ export function StripeRefundForm({
           }}
         />
       </label>
+      {allocation && Boolean(order.taxCents) && (
+        <label>
+          Sales tax already refunded ($)
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            max={((order.taxCents ?? 0) - (order.refundedTaxCents ?? 0)) / 100}
+            value={tax / 100}
+            onChange={(e) => {
+              setTax(Math.round(Number(e.target.value) * 100));
+              setPreview(false);
+            }}
+          />
+        </label>
+      )}
       <label>
         Refund reason
         <input

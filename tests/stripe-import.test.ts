@@ -19,7 +19,11 @@ import {
   currentPaymentLinkUrl,
   historicalPaymentLinkUrls,
   paymentLinkPrices,
+  paymentLinkAvailable,
+  currentPaymentLinkId,
+  currentPaymentLinkPriceIds,
 } from "../src/lib/payments/paymentLink";
+import { ticketEmail } from "../src/lib/email/delivery";
 import {
   saveBrother,
   brotherReport,
@@ -246,6 +250,7 @@ function configureLink(t: { after: (fn: () => void) => void }) {
     "STRIPE_PAYMENT_LINK_ENABLED",
     "STRIPE_PAYMENT_LINK_ID",
     "STRIPE_CHECKOUT_ENABLED",
+    "STRIPE_LINK_TAX_INCLUDED",
   ];
   const old = keys.map((k) => process.env[k]);
   t.after(() =>
@@ -256,7 +261,203 @@ function configureLink(t: { after: (fn: () => void) => void }) {
   );
   process.env.STRIPE_LINK_PRICE_BASIC = "price_link_basic";
   process.env.STRIPE_LINK_PRICE_MEAT = "price_link_meat";
+  process.env.STRIPE_LINK_TAX_INCLUDED = "false";
 }
+
+async function inclusiveSale(t: { after: (fn: () => void) => void }) {
+  configureLink(t);
+  const result = await bundledSale();
+  process.env.STRIPE_LINK_TAX_INCLUDED = "true";
+  result.session.automatic_tax = {
+    enabled: true,
+    status: "complete",
+    liability: null,
+    provider: "stripe",
+  };
+  for (const item of result.session.line_items!.data) {
+    const basic = item.price!.id === "price_link_basic";
+    item.price!.unit_amount = basic ? 1158 : 1720;
+    item.price!.tax_behavior = "inclusive";
+    item.amount_total = item.quantity! * item.price!.unit_amount;
+    item.amount_tax = basic ? 177 : 131;
+  }
+  result.session.total_details!.amount_tax = 308;
+  result.session.amount_total = 4036;
+  return result;
+}
+
+test("current tax-inclusive link fulfills once, emails every QR, excludes tax from funds and reconciles a full refund", async (t) => {
+  const { fake, session } = await inclusiveSale(t);
+  process.env.STRIPE_PAYMENT_LINK_ENABLED = "true";
+  process.env.STRIPE_PAYMENT_LINK_ID = "plink_current";
+  process.env.STRIPE_CHECKOUT_ENABLED = "false";
+  const target = new MemoryStore();
+  const event = fake.event("evt_tax_paid", session.id);
+  await receiveStripeEvent(target, event, now);
+  await processStripeWork(target, fake.gateway, now);
+  await receiveStripeEvent(
+    target,
+    fake.event("evt_tax_repeated", session.id),
+    now,
+  );
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.orders.length, 1);
+  const order = target.state.orders[0];
+  assert.equal(order.taxCents, 308);
+  assert.equal(order.feeCents, 228);
+  assert.equal(order.baseCents, 3500);
+  assert.equal(order.totalCents, 4036);
+  assert.equal(order.status, "paid");
+  assert.equal(standings(target.state).fundsRaisedCents, 3500);
+  assert.equal(target.state.jobs.length, 1);
+  const email = await ticketEmail(target.state, target.state.jobs[0]);
+  assert.equal(email.attachments.length, 3);
+  assert.equal(
+    target.state.providerEvents.every((e) => e.status === "processed"),
+    true,
+  );
+  fake.refunds.push({
+    id: "re_inclusive_full",
+    charge: `ch_${session.id}`,
+    currency: "usd",
+    amount: 4036,
+    status: "succeeded",
+    metadata: {},
+  } as never);
+  await reconcileSession(target, session.id, fake.gateway, now);
+  await reconcileSession(target, session.id, fake.gateway, now);
+  assert.equal(target.state.orders[0].status, "refunded");
+  assert.equal(target.state.orders[0].refundedBaseCents, 3500);
+  assert.equal(target.state.orders[0].refundedFeeCents, 228);
+  assert.equal(target.state.orders[0].refundedTaxCents, 308);
+  assert.equal(standings(target.state).fundsRaisedCents, 0);
+  assert.equal(
+    target.state.tickets.some((t) => t.valid),
+    false,
+  );
+});
+
+test("unresolved or inconsistent inclusive tax cannot issue tickets", async (t) => {
+  const { session } = await inclusiveSale(t);
+  for (const mutate of [
+    (s: typeof session) => {
+      s.automatic_tax.status = "failed";
+    },
+    (s: typeof session) => {
+      s.total_details!.amount_tax++;
+    },
+    (s: typeof session) => {
+      s.line_items!.data[0].price!.tax_behavior = "exclusive";
+    },
+    (s: typeof session) => {
+      s.line_items!.data[0].amount_tax = -1;
+    },
+  ]) {
+    const invalid = structuredClone(session);
+    mutate(invalid);
+    const target = new MemoryStore();
+    await assert.rejects(
+      target.transaction((s) =>
+        importPaymentLinkSession(s, invalid, "plink_current", now),
+      ),
+      /tax/,
+    );
+    assert.equal(target.state.orders.length, 0);
+    assert.equal(target.state.tickets.length, 0);
+    assert.equal(target.state.jobs.length, 0);
+  }
+});
+
+test("abandoned and delayed unpaid link sessions do not issue tickets or create false alerts", async (t) => {
+  const { fake, session } = await inclusiveSale(t);
+  process.env.STRIPE_PAYMENT_LINK_ENABLED = "true";
+  process.env.STRIPE_PAYMENT_LINK_ID = "plink_current";
+  session.payment_status = "unpaid";
+  const target = new MemoryStore();
+  await receiveStripeEvent(
+    target,
+    fake.event("evt_delayed_payment", session.id),
+    now,
+  );
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.orders.length, 0);
+  assert.equal(target.state.providerEvents[0].status, "processed");
+  session.status = "expired";
+  const expired = fake.event("evt_abandoned_link", session.id);
+  expired.type = "checkout.session.expired";
+  await receiveStripeEvent(target, expired, now);
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.jobs.length, 0);
+  assert.equal(
+    target.state.providerEvents.every((e) => e.status === "processed"),
+    true,
+  );
+  session.status = "complete";
+  session.payment_status = "paid";
+  const paid = fake.event("evt_async_link_paid", session.id);
+  paid.type = "checkout.session.async_payment_succeeded";
+  await receiveStripeEvent(target, paid, now);
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.orders.length, 1);
+  assert.equal(target.state.tickets.filter((t) => t.valid).length, 3);
+});
+
+test("payment-intent events arriving before checkout recover their association without clearing unrelated review", async (t) => {
+  const { fake, session } = await inclusiveSale(t);
+  process.env.STRIPE_PAYMENT_LINK_ENABLED = "true";
+  process.env.STRIPE_PAYMENT_LINK_ID = "plink_current";
+  const target = new MemoryStore();
+  const intent = fake.event("evt_intent_first", session.id);
+  intent.type = "payment_intent.succeeded";
+  intent.data.object = { id: session.payment_intent } as never;
+  await receiveStripeEvent(target, intent, now);
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.providerEvents[0].status, "review");
+  await receiveStripeEvent(
+    target,
+    fake.event("evt_checkout_later", session.id),
+    now,
+  );
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(target.state.providerEvents[0].status, "pending");
+  await processStripeWork(target, fake.gateway, now);
+  assert.equal(
+    target.state.providerEvents.every((e) => e.status === "processed"),
+    true,
+  );
+  assert.equal(target.state.orders.length, 1);
+  assert.equal(target.state.jobs.length, 1);
+});
+
+test("hosted link allows its actual maximum quantities and closes website entry at presale cutoff", async (t) => {
+  const { session } = await inclusiveSale(t);
+  for (const item of session.line_items!.data) {
+    item.quantity = 99;
+    item.amount_total = 99 * item.price!.unit_amount!;
+    item.amount_tax = 10000;
+  }
+  session.amount_total = 284922;
+  session.total_details!.amount_tax = 20000;
+  const target = new MemoryStore();
+  await target.transaction((s) =>
+    importPaymentLinkSession(s, session, "plink_current", now),
+  );
+  assert.equal(target.state.tickets.length, 198);
+  process.env.STRIPE_PAYMENT_LINK_ENABLED = "true";
+  process.env.STRIPE_PAYMENT_LINK_ID = currentPaymentLinkId;
+  process.env.STRIPE_LINK_PRICE_BASIC = currentPaymentLinkPriceIds.basic;
+  process.env.STRIPE_LINK_PRICE_MEAT = currentPaymentLinkPriceIds.meat;
+  assert.equal(
+    paymentLinkAvailable(new Date("2026-11-19T17:59:59-06:00")),
+    true,
+  );
+  assert.equal(
+    paymentLinkAvailable(new Date("2026-11-19T18:00:00-06:00")),
+    false,
+  );
+  process.env.STRIPE_LINK_PRICE_MEAT = "price_unreviewed";
+  assert.equal(paymentLinkAvailable(now), false);
+});
 
 test("current and historical links are explicit; bundled catalog must be complete and distinct", (t) => {
   configureLink(t);

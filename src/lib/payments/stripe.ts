@@ -15,6 +15,7 @@ import { digest, unseal } from "../operations/crypto";
 import { appUrl } from "../email/delivery";
 import { publicPrices, purchaseTerms } from "../policies";
 import { assertLaunchReady } from "../launch";
+import { includedPaymentLinkTax } from "./paymentLink";
 export const stripeApiVersion = "2026-10-28.endive" as const;
 export function checkoutConfig(requireSales = false) {
   const env = process.env;
@@ -450,7 +451,8 @@ export function validateSession(s: State, session: Stripe.Checkout.Session) {
     session.currency !== "usd" ||
     session.amount_total !== order.totalCents ||
     session.total_details?.amount_discount ||
-    session.total_details?.amount_tax ||
+    includedPaymentLinkTax(session, attempt.taxInclusive === true) !==
+      order.taxCents ||
     session.total_details?.amount_shipping
   )
     throw new Error("Stripe session does not match the authorized order.");
@@ -469,7 +471,7 @@ export function validateSession(s: State, session: Stripe.Checkout.Session) {
       (sum, row) => sum + row.quantity * row.cents,
       0,
     ) !==
-      order.baseCents + includedFee
+      order.baseCents + includedFee + order.taxCents
   )
     throw new Error("Stripe catalog fee allocation does not match the order.");
   if (!session.line_items || session.line_items.has_more)
@@ -608,7 +610,10 @@ async function reconcileCharge(
           (t) => t.orderId === orderId && !t.refunded,
         );
         const totalRemaining =
-          order.totalCents - order.refundedBaseCents - order.refundedFeeCents;
+          order.totalCents -
+          order.refundedBaseCents -
+          order.refundedFeeCents -
+          (order.refundedTaxCents ?? 0);
         // Full remaining refund is unambiguous. External partial refunds require allocation review.
         const full = refund.amount === totalRemaining;
         record = {
@@ -616,6 +621,7 @@ async function reconcileCharge(
           orderId,
           ticketIds: full ? remaining.map((t) => t.id) : [],
           feeCents: full ? order.feeCents - order.refundedFeeCents : 0,
+          taxCents: full ? order.taxCents - (order.refundedTaxCents ?? 0) : 0,
           amountCents: refund.amount,
           reason: "Stripe dashboard refund",
           status: full ? "pending" : "review",
@@ -647,6 +653,7 @@ async function reconcileCharge(
         "stripe",
         record.reason,
         now,
+        record.taxCents ?? 0,
       );
       record.status = "succeeded";
     }
@@ -738,6 +745,10 @@ export async function requestStripeRefund(
       (o) => o.id === input.id && o.source === "stripe",
     );
     const attempt = s.checkouts.find((c) => c.orderId === order?.id);
+    if (attempt?.taxInclusive)
+      throw new Error(
+        "Tax-inclusive refunds are handled by the Stripe account owner.",
+      );
     if (
       !order ||
       !attempt?.paymentId ||
@@ -951,6 +962,7 @@ export async function processStripeWork(
           : typeof object.charge === "string"
             ? object.charge
             : null;
+      let recognizedPaymentLink = false;
       let attempt = event.type.startsWith("checkout.session.")
         ? state.checkouts.find((c) => c.sessionId === object.id)
         : state.checkouts.find(
@@ -971,6 +983,7 @@ export async function processStripeWork(
           typeof session.payment_link === "string"
             ? session.payment_link
             : session.payment_link?.id;
+        recognizedPaymentLink = actualLink === linkId;
         if (
           actualLink === linkId &&
           session.status === "complete" &&
@@ -990,11 +1003,37 @@ export async function processStripeWork(
         await reconcileSession(store, attempt.sessionId, eventGateway, now);
       await store.transaction((s) => {
         const e = s.providerEvents.find((e) => e.id === row.id)!;
-        e.status = attempt ? "processed" : "review";
-        e.error = attempt
-          ? undefined
-          : "Unmatched Stripe event; reconcile/import the associated order.";
+        e.status = attempt || recognizedPaymentLink ? "processed" : "review";
+        e.error =
+          attempt || recognizedPaymentLink
+            ? undefined
+            : "Unmatched Stripe event; reconcile/import the associated order.";
         e.leaseUntil = undefined;
+        // Payment-intent/refund events can arrive before the link's checkout
+        // event. Retry only previously unmatched, signature-verified references
+        // now associated with this order; never clear a financial review.
+        const associated =
+          attempt && s.checkouts.find((c) => c.id === attempt.id);
+        if (associated) {
+          for (const earlier of s.providerEvents) {
+            if (
+              earlier.status === "review" &&
+              earlier.error ===
+                "Unmatched Stripe event; reconcile/import the associated order." &&
+              earlier.verified &&
+              ((associated.paymentId &&
+                earlier.verified.paymentId === associated.paymentId) ||
+                (associated.chargeId &&
+                  earlier.verified.chargeId === associated.chargeId) ||
+                (earlier.type.startsWith("checkout.session.") &&
+                  earlier.objectId === associated.sessionId))
+            ) {
+              earlier.status = "pending";
+              earlier.error = undefined;
+              earlier.nextAttemptAt = now.toISOString();
+            }
+          }
+        }
       });
     } catch {
       failed++;

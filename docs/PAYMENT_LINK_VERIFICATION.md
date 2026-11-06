@@ -1,6 +1,6 @@
 # November 3 Payment Link verification
 
-Current organizer link: [Stripe checkout](https://buy.stripe.com/6oU3cva1Ccbe4pY3lR2kw01). The previous link remains explicitly allowed for historical reconciliation.
+**November 5 replacement:** the current organizer link is https://buy.stripe.com/6oU4gz7Tugru8GeaOj2kw03. See [current tax-inclusive catalog and integration](NEW_PAYMENT_LINK_2026-11-05.md). Earlier observations below are historical; retired links remain explicitly allowed for reconciliation.
 
 ## Public inspection
 

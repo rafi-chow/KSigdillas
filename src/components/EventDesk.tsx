@@ -76,6 +76,8 @@ type FoundOrder = {
   baseCents?: number;
   feeCents?: number;
   refundedFeeCents?: number;
+  taxCents?: number;
+  refundedTaxCents?: number;
   tickets: {
     id: string;
     name: string;

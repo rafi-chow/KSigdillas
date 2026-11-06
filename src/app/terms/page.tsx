@@ -17,8 +17,8 @@ export default function TermsPage() {
         The online total is displayed before payment. Ticket base amounts used
         for chapter points and brother sales credit are accounting allocations,
         not additional charges. You will receive one QR ticket per guest after
-        payment is verified. If email is delayed, your private order page
-        remains your ticket access.
+        payment is verified. If email is delayed, contact the organizer with
+        your Stripe receipt. Any existing private order link remains available.
       </p>
       <h2>Refunds and changes</h2>
       <p>{purchaseTerms.refund}</p>
@@ -47,9 +47,11 @@ export default function TermsPage() {
       </p>
       <h2>Terms version</h2>
       <p>
-        Version {purchaseTerms.version}. The version accepted when you start
-        payment is recorded with your order. Later changes do not silently
-        replace those accepted terms.
+        Version {purchaseTerms.version}. Direct website checkout records the
+        accepted version with your order. Purchases on the organizer&apos;s
+        Stripe Payment Link are tracked separately; website acceptance is not
+        recorded for those purchases. Later changes do not silently replace
+        accepted terms.
       </p>
     </PolicyPage>
   );

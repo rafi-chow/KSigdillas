@@ -1,9 +1,10 @@
-import { resetLoginCounters } from "./isolation";
+import { resetLoginCounters, quietDevelopmentReloads } from "./isolation";
 import { randomUUID } from "node:crypto";
 import QRCode from "qrcode";
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+test.beforeEach(quietDevelopmentReloads);
 async function signIn(page: Page, role = "organizer") {
   await page.goto("/admin/leaderboard");
   await page.getByLabel("Staff ID", { exact: true }).fill(role);
@@ -398,13 +399,11 @@ test("staff can record the approved 18 oz steak package and manage its enabled r
   await page
     .getByRole("button", { name: "Rules & access", exact: true })
     .click();
-  const form = page
-    .locator("form")
-    .filter({
-      has: page.getByRole("heading", {
-        name: /^Frozen fajita steak · revision /,
-      }),
-    });
+  const form = page.locator("form").filter({
+    has: page.getByRole("heading", {
+      name: /^Frozen fajita steak · revision /,
+    }),
+  });
   await expect(
     form.getByRole("checkbox", { name: "Enabled", exact: true }),
   ).toBeEnabled();

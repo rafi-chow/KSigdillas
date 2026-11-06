@@ -69,6 +69,7 @@ export type Order = {
   totalCents: number;
   refundedBaseCents: number;
   refundedFeeCents: number;
+  refundedTaxCents?: number;
   createdAt: string;
   quoteExpiresAt: string;
   tokenHash: string;
@@ -200,6 +201,7 @@ export type CheckoutAttempt = {
   feePolicy?: string;
   origin?: string;
   paymentLinkId?: string;
+  taxInclusive?: boolean;
   pricingMode?: "all_in" | "order_fee";
   includedFeeCents?: number;
   sessionId?: string;
@@ -216,7 +218,12 @@ export type CheckoutAttempt = {
 };
 export type ProviderEvent = {
   id: string;
-  verified?: { accountId: string; livemode: boolean; paymentId?: string; chargeId?: string };
+  verified?: {
+    accountId: string;
+    livemode: boolean;
+    paymentId?: string;
+    chargeId?: string;
+  };
   objectId: string;
   type: string;
   status: "pending" | "processed" | "review";
@@ -231,6 +238,7 @@ export type RemoteRefund = {
   orderId: string;
   ticketIds: string[];
   feeCents: number;
+  taxCents?: number;
   amountCents: number;
   reason: string;
   status: "requested" | "pending" | "succeeded" | "failed" | "review";

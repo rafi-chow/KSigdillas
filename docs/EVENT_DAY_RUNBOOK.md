@@ -1,5 +1,7 @@
 # KSigdillas event-day runbook
 
+**Current hosted checkout:** [November 5 Payment Link integration](NEW_PAYMENT_LINK_2026-11-05.md) records the organizer's $11.58/$17.20 inclusive-tax prices and replaces the earlier online-price and closed-hosted-sales status below. Embedded checkout remains disabled. The Stripe owner must close the independently shared link at the 6 PM presale cutoff.
+
 **November 5 preparation:** [Current release and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) records minute-by-minute due work, five-minute heartbeat checks and read-only monitor access.
 
 **Latest release:** https://ksigdillas.netlify.app is deployed with sales closed. See [current verification and remaining launch gates](GO_LIVE_PREPARATION_2026-11-05.md). Native maintenance runs without a browser; independent monitoring delivered a real incident and automatic recovery to the designated operator inbox.

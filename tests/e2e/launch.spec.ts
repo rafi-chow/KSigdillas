@@ -1,9 +1,10 @@
-import { resetLoginCounters } from "./isolation";
+import { resetLoginCounters, quietDevelopmentReloads } from "./isolation";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 
 test.beforeEach(resetLoginCounters);
+test.beforeEach(quietDevelopmentReloads);
 
 test("launch policies, all-in prices, consent and keyboard access", async ({
   page,

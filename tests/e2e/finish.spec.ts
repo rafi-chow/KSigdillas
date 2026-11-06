@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { quietDevelopmentReloads } from "./isolation";
+test.beforeEach(quietDevelopmentReloads);
 
 test("supply guide switches days with keyboard controls and exposes accepted products", async ({
   page,

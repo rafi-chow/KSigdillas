@@ -9,6 +9,10 @@ import { checkoutAvailable } from "@/lib/payments/stripe";
 import { operationsEnabled } from "@/lib/operations/store";
 import { salesWindowOpen } from "@/lib/operations/rules";
 import { publicPrices, money } from "@/lib/policies";
+import {
+  paymentLinkAvailable,
+  currentPaymentLinkTotals,
+} from "@/lib/payments/paymentLink";
 import { causeCopy, eventConfig, ticketTiers } from "@/lib/eventConfig";
 import styles from "./modern.module.css";
 
@@ -43,9 +47,11 @@ const faqs = [
 ] as const;
 
 export default function Home() {
+  const hosted = paymentLinkAvailable();
   const canBuy =
-    operationsEnabled() && checkoutAvailable() && salesWindowOpen();
+    hosted || (operationsEnabled() && checkoutAvailable() && salesWindowOpen());
   const prices = publicPrices();
+  const online = hosted ? currentPaymentLinkTotals : prices.online;
   return (
     <main id="main-content" tabIndex={-1} className={styles.home}>
       <HeroSection canBuy={canBuy} />
@@ -67,14 +73,18 @@ export default function Home() {
                 {...tier}
                 ticketUrl={eventConfig.ticketUrl}
                 canBuy={canBuy}
+                onlinePrice={online[tier.id]}
               />
             ))}
           </div>
           <div className="ticket-notes">
             <p>
-              Online totals include the processing fee:{" "}
-              {money(prices.online.basic)} / {money(prices.online.meat)}.
-              Presale ends Thursday at 6 PM.
+              Online totals include{" "}
+              {hosted
+                ? "sales tax and the processing fee"
+                : "the processing fee"}
+              : {money(online.basic)} / {money(online.meat)}. Presale ends
+              Thursday at 6 PM.
             </p>
             <p>
               Food is available while supplies last. Door tickets are cash only.
