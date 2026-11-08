@@ -1,6 +1,6 @@
 # Scoring and donations — November 8, 2026
 
-Release candidate: implementation and local acceptance complete; production publish and migration verification will be recorded below. Approved scope: [implementation plan](SCORING_AND_DONATIONS_PLAN_2026-11-08.md).
+Published at https://ksigdillas.netlify.app as [Netlify deploy `6af0cca04845678b97fc627e`](https://app.netlify.com/projects/ksigdillas/deploys/6af0cca04845678b97fc627e), from [commit `ad55484`](https://github.com/rafi-chow/KSigdillas/commit/ad55484208dcdd667a1a4e59cff2390d23eda4ac) on `feat/event-operations`. The branch is pushed to GitHub; main was not merged. Approved scope: [implementation plan](SCORING_AND_DONATIONS_PLAN_2026-11-08.md).
 
 ## Behavior
 
@@ -16,7 +16,7 @@ Brother referrals are separate from ticket sales and verified personal donations
 
 - 118 unit/domain/HTTP/Postgres tests passed, including winner inversions, donation thresholds, per-receipt rounding, retries, out-of-order payment events, refunds/disputes, attribution correction, migration adjustments, and concurrent donation/import/admission operations.
 - 44 browser cases passed in Chromium and mobile WebKit against the compiled production build over a loopback-only HTTPS proxy. The isolated local certificate is trusted only by that test browser. Production HTTPS requirements and Secure cookies remain enforced.
-- Typecheck, lint, and the complete production webpack build passed. A final Netlify adapter build and production smoke check accompany publication.
+- Typecheck, lint, and the complete production webpack build passed. The full Netlify production adapter build and publish passed, including the scheduled worker bundles.
 - Visuals reviewed at 320/375/390/430/768/1280/1440 pixels, including 200% text zoom, accessibility audits, long identifiers/referrals, zero totals, paid/review states, and duplicate admission messages. Actual rendered PNGs were inspected. No physical iPhone test is claimed.
 - Working ticket checkout, QR rendering/decoding, authentication, role restrictions, supply caps, public feed behavior and existing packet rules have regression coverage.
 
@@ -31,3 +31,13 @@ The signed-in Netlify Free ledger showed 193.7 used / 106.3 credits remaining. O
 ## Matching packet wording
 
 “Monday: most accepted supply points. Tuesday: most pie/slap points. Wednesday: longest verified hang. Thursday: most unique people attending. Monetary donations earn 50 chapter points per complete $5, calculated separately for each donation; gifts under $5 earn no points.” External packet text was not edited by this release.
+
+## Production acceptance
+
+Policy v2 was applied with the reviewed snapshot and audited reason. The existing paid order, QR token, 46 brothers, and $10 ticket base revenue are unchanged. One pre-event scan is retained as rehearsal history; actual attendance is zero and the ticket is valid for admission. Production has zero refunds and zero paid donations.
+
+Live verification confirmed both Donate links and all three ticket buttons use their exact approved Stripe destinations, updated public rules render, all 11 referenced static assets return 200, legacy ticket checkout URLs still redirect, private APIs require authentication, staff responses are no-store, and login uses Secure/HttpOnly/SameSite cookies. Strict health returned 200 with a current scheduler heartbeat and zero business attention. Both Chromium and WebKit rendered the live mobile donation panel without client errors or horizontal overflow; the deployed PNG was visually inspected. Configured-private-value scans checked 176 candidate source files, 52 public assets, and six rendered routes with zero matches. Production dependency audit reports zero vulnerabilities.
+
+A uniquely identified donation checkout was opened without buyer/payment details and explicitly expired unpaid. No matching expired-event delivery was observed by 1:31 PM Central; the restricted API key cannot inspect the destination's event subscriptions. This probe does not establish signed donation delivery. The successful live ticket purchase proves the existing paid-checkout transport; paid-donation settlement and its receipt email remain unverified until a genuine authorized donation. Confirm the relevant Checkout completion/async event subscriptions with the Stripe owner if delayed-payment delivery needs independent provider evidence. The importer recovery commands remain available.
+
+Private evidence: `scoring-live-verification.json`, `scoring-policy-applied.json`, `donation-stripe-verification.json`, `donation-unpaid-delivery.json`, `scoring-netlify-publish.log`, production backups, and screenshots under `.data/deployment/`. No actual payment, refund, or attendee data is included in shared visual fixtures.

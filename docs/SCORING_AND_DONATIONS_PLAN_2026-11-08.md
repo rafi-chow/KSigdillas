@@ -1,6 +1,6 @@
 # Scoring and donation update plan
 
-Status: planning only. No application code, production settings, payment settings, or production records changed. Updated November 8, 2026 after the user's scoring clarification and $5 donation threshold.
+Original planning document, subsequently implemented at the user's request on November 8. See [release verification](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) for deployed behavior and evidence. The plan below records the approved scope, scoring clarification and $5 donation threshold.
 
 ## Agreed behavior
 
