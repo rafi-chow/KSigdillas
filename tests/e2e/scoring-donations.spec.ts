@@ -46,7 +46,7 @@ test("donation panel and rules stay readable at mobile, tablet and desktop sizes
       panel.getByRole("heading", { name: "Make a donation." }),
     ).toBeVisible();
     const links = page.getByRole("link", { name: "Donate", exact: true });
-    await expect(links).toHaveCount(2);
+    await expect(links).toHaveCount(3);
     for (const link of await links.all()) {
       await expect(link).toHaveAttribute("href", donationUrl);
       const box = await link.boundingBox();

@@ -1,5 +1,6 @@
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import { eventConfig } from "@/lib/eventConfig";
+import { donationUrl } from "@/lib/payments/donationLink";
 import { QuesadillaArt } from "./CheeseArt";
 import { KappaSigmaMark } from "./KappaSigmaMark";
 
@@ -45,6 +46,9 @@ export function HeroSection({
               <ArrowDown size={18} aria-hidden="true" />
             </a>
           </div>
+          <a className="hero-donate-link" href={donationUrl}>
+            Donate <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
         </div>
         <QuesadillaArt />
       </div>

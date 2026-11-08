@@ -1,5 +1,9 @@
 # Netlify credit budget — updated November 8, 2026
 
+## November 8 hero Donate follow-up
+
+The signed-in ledger now reflects 13 publishes and **209.1 credits used / 90.9 remaining**. The requested hero Donate update needs one publication, so reserve another 15: approximately **224.1 used / 75.9 remaining** before further traffic and compute. This stays on the existing Free plan with no purchase or upgrade. The earlier same-assumption event envelope of 239.22 becomes approximately 254.22 after this extra publish; actual traffic/runtime must still be monitored and the internal 30% reserve is not established.
+
 ## November 8 scoring/donation release
 
 The signed-in billing page reports **193.7 credits used / 106.3 remaining**, with all 12 previous production publishes now reflected (180 credits). Requests account for 3.3 credits, compute 6.2, and bandwidth 4.2. The period still ends November 21. The successful scoring/donation release `6af0cca04845678b97fc627e` is the thirteenth publication. Reserve **15 credits** beyond that observed ledger: 208.7 used and 91.3 remaining before further traffic/runtime consumption. No upgrade, payment method, or credit purchase is involved. The prior same-assumption projected envelope of 224.22 becomes approximately **239.22** with this additional publish; actual runtime/traffic has already advanced, so that is an estimate, not a guaranteed remaining balance. Keep the existing alerts, avoid optional republishes, and monitor team usage through the event. The internal 30% final reserve is not established.
