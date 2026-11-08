@@ -44,6 +44,9 @@ export function maintenanceWorkDue(
       (c) =>
         Boolean(c.sessionId) && due(c.nextCheckAt) && available(c.leaseUntil),
     ) ||
+    state.donations.some(
+      (d) => due(d.nextCheckAt) && available(d.leaseUntil),
+    ) ||
     (refundWrites && state.refunds.some((r) => r.status === "requested"))
   );
 }
@@ -86,6 +89,12 @@ export function maintenanceHealth(state: State, now = new Date()) {
         Boolean(c.error) ||
         (Boolean(c.sessionId) &&
           Date.parse(c.nextCheckAt) < now.getTime() - 300000),
+    ).length +
+    state.donations.filter(
+      (d) =>
+        d.error ||
+        d.review.length ||
+        Date.parse(d.nextCheckAt) < now.getTime() - 300000,
     ).length;
   return {
     healthy,

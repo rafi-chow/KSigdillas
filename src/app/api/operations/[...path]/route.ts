@@ -19,6 +19,7 @@ import {
   audit,
   award,
   createOrder,
+  correctAdmission,
   editRule,
   refundTickets,
   reverseCheckIn,
@@ -42,6 +43,8 @@ import {
   stripeGateway,
   stripeRefundWriteEnabled,
 } from "@/lib/payments/stripe";
+import { admissionWindowOpen } from "@/lib/operations/admissions";
+import { correctDonation } from "@/lib/payments/donations";
 import { contestTotals } from "@/lib/operations/contests";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -111,6 +114,7 @@ async function handle(request: NextRequest, context: Context) {
         return json({
           user: { id: user.id, name: user.name, role: user.role },
           ...publicData,
+          admissionWindowOpen: admissionWindowOpen(now),
           settings: user.role === "organizer" ? s.settings[0] : undefined,
           awards: s.awards,
           contests: user.role !== "check-in" ? contestTotals(s) : [],
@@ -144,6 +148,7 @@ async function handle(request: NextRequest, context: Context) {
                   pendingEvents: s.providerEvents.filter(
                     (e) => e.status !== "processed",
                   ),
+                  donations: s.donations,
                   refunds: s.refunds,
                   refundWriteEnabled: stripeRefundWriteEnabled(),
                   checkouts: s.checkouts.map(
@@ -228,6 +233,7 @@ async function handle(request: NextRequest, context: Context) {
                   teamId,
                   valid,
                   checkedInAt,
+                  admissionId,
                   refunded,
                   baseCents,
                 }) => ({
@@ -237,6 +243,8 @@ async function handle(request: NextRequest, context: Context) {
                   teamId,
                   valid,
                   checkedInAt,
+                  admissionCode: s.admissions.find((a) => a.id === admissionId)
+                    ?.code,
                   refunded,
                   baseCents: user.role === "organizer" ? baseCents : undefined,
                 }),
@@ -248,7 +256,7 @@ async function handle(request: NextRequest, context: Context) {
         authorize(s, token, "organize", now);
         // Safe attendee manifest; no credentials, encrypted secrets, or bearer tokens.
         const manifest = s.tickets.map(
-          ({ id, orderId, name, tier, teamId, valid, checkedInAt }) => ({
+          ({
             id,
             orderId,
             name,
@@ -256,6 +264,16 @@ async function handle(request: NextRequest, context: Context) {
             teamId,
             valid,
             checkedInAt,
+            admissionId,
+          }) => ({
+            id,
+            orderId,
+            name,
+            tier,
+            teamId,
+            valid,
+            checkedInAt,
+            admissionCode: s.admissions.find((a) => a.id === admissionId)?.code,
           }),
         );
         return json({
@@ -426,9 +444,47 @@ async function handle(request: NextRequest, context: Context) {
         audit(s, user.id, "email-resolved", job.id, input.reason, now);
         return { ok: true };
       }
+      if (path === "donation-attribution") {
+        const input = z
+          .object({
+            id: z.string(),
+            revision: z.number().int().nonnegative(),
+            teamId: z.string().nullable(),
+            brotherId: z.string().nullable(),
+            reason: z.string().trim().min(1).max(300),
+          })
+          .strict()
+          .parse(body);
+        correctDonation(s, input, user.id, now);
+        return { ok: true };
+      }
+      if (path === "link-admission") {
+        const input = z
+          .object({
+            id: z.string(),
+            admissionCode: z.string(),
+            reason: z.string().trim().min(1).max(300),
+          })
+          .strict()
+          .parse(body);
+        correctAdmission(
+          s,
+          input.id,
+          input.admissionCode,
+          input.reason,
+          user.id,
+          now,
+        );
+        return { ok: true };
+      }
+      const scanOptions = {
+        admissionCode: z.string().max(40).optional(),
+        rehearsal: z.boolean().optional(),
+        overrideReason: z.string().trim().min(1).max(300).optional(),
+      };
       if (path === "scan") {
-        const { token: input } = z
-          .object({ token: z.string().min(1).max(2048) })
+        const { token: input, ...options } = z
+          .object({ token: z.string().min(1).max(2048), ...scanOptions })
           .strict()
           .parse(body);
         let value = input.trim();
@@ -441,9 +497,12 @@ async function handle(request: NextRequest, context: Context) {
             throw new Error("This QR belongs to another site.");
           value = url.pathname.split("/").at(-1)!;
         }
-        const result = scanTicket(s, value, user.id, now);
+        if (options.overrideReason && user.role !== "organizer")
+          throw new Error("Only the organizer role can override event hours.");
+        const result = scanTicket(s, value, user.id, now, options);
         return {
           admitted: result.admitted,
+          rehearsal: options.rehearsal === true,
           message: result.message,
           ticket: {
             id: result.ticket.id,
@@ -455,15 +514,24 @@ async function handle(request: NextRequest, context: Context) {
         };
       }
       if (path === "lookup-scan") {
-        const { id } = z
-          .object({ id: z.string().max(100) })
+        const { id, ...options } = z
+          .object({ id: z.string().max(100), ...scanOptions })
           .strict()
           .parse(body);
+        if (options.overrideReason && user.role !== "organizer")
+          throw new Error("Only the organizer role can override event hours.");
         const ticket = s.tickets.find((t) => t.id === id);
         if (!ticket) throw new Error("Ticket not found.");
-        const result = scanTicket(s, unseal(ticket.tokenBox), user.id, now);
+        const result = scanTicket(
+          s,
+          unseal(ticket.tokenBox),
+          user.id,
+          now,
+          options,
+        );
         return {
           admitted: result.admitted,
+          rehearsal: options.rehearsal === true,
           message: result.message,
           ticket: {
             id,

@@ -1,5 +1,8 @@
 # KSigdillas production readiness plan
 
+**Superseded scoring definitions (November 8):** [Scoring and donation release](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) records Monday supply points, Tuesday pie/slap points, Wednesday longest hang, Thursday unique attendees, and per-donation $5 point units. Earlier package-count, pie/slap-revenue, and pooled-donation descriptions below are historical.
+
+
 **November 5 continuation:** [Post-webhook finish and production acceptance plan](POST_WEBHOOK_FINISH_PLAN_2026-11-05.md) is the current execution sequence. The owner reports the URL edit complete; signed delivery remains unverified. It records fresh checks and supersedes older status, worker-cadence and live-test-purchase instructions.
 
 **Current finish sequence:** [Finish to webhook handoff](FINISH_TO_WEBHOOK_HANDOFF_PLAN.md) is the latest planning-only revision: visual/copy cleanup, bounded Netlify jobs, deployment, email/operations, testing, and the exact Stripe-owner handoff. It supersedes older execution order below without erasing historical evidence. No application or account change was made for that revision.

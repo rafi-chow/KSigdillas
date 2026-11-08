@@ -128,11 +128,25 @@ test("unpaid/wrong-amount tickets cannot be admitted; each paid QR admits once",
   const s = state();
   const o = createOrder(s, orderInput(), "test", "test", monday);
   const token = unseal(s.tickets[0].tokenBox);
-  assert.throws(() => scanTicket(s, token, "scanner", monday));
+  assert.throws(() =>
+    scanTicket(s, token, "scanner", new Date("2026-11-19T19:00:00-06:00"), {
+      admissionCode: `W-${randomUUID()}`,
+    }),
+  );
   assert.throws(() => fulfillOrder(s, o.id, 1, "test", monday));
   fulfillOrder(s, o.id, 3500, "test", monday);
-  assert.equal(scanTicket(s, token, "scanner", monday).admitted, true);
-  assert.equal(scanTicket(s, token, "scanner", monday).admitted, false);
+  assert.equal(
+    scanTicket(s, token, "scanner", new Date("2026-11-19T19:00:00-06:00"), {
+      admissionCode: `W-${randomUUID()}`,
+    }).admitted,
+    true,
+  );
+  assert.equal(
+    scanTicket(s, token, "scanner", new Date("2026-11-19T19:00:00-06:00"), {
+      admissionCode: `W-${randomUUID()}`,
+    }).admitted,
+    false,
+  );
   assert.equal(standings(s).teams[0].ticketPoints, 350);
   assert.equal(standings(s).teams[0].attendance, 1);
 });
@@ -142,7 +156,13 @@ test("no-team guests generate funds and overall attendance, no team points", () 
   input.attendees[0].teamId = null;
   const o = createOrder(s, input, "test", "test", monday);
   fulfillOrder(s, o.id, 1e3, "test", monday);
-  scanTicket(s, unseal(s.tickets[0].tokenBox), "test", monday);
+  scanTicket(
+    s,
+    unseal(s.tickets[0].tokenBox),
+    "test",
+    new Date("2026-11-19T19:00:00-06:00"),
+    { admissionCode: `W-${randomUUID()}` },
+  );
   assert.equal(standings(s).fundsRaisedCents, 1e3);
   assert.equal(standings(s).attendance, 1);
   assert.equal(
@@ -224,7 +244,7 @@ test("slap/pie require verified payment, replay cannot repeat receipts or points
   assert.equal(standings(s).fundsRaisedCents, 600);
   assert.equal(s.receipts.length, 2);
 });
-test("$7+$3 donation earns 100; reversing $3 leaves $7 and 50", () => {
+test("$7+$3 donations earn 50; reversing $3 leaves $7 and 50", () => {
   const s = state();
   const first = {
     requestKey: randomUUID(),
@@ -240,7 +260,7 @@ test("$7+$3 donation earns 100; reversing $3 leaves $7 and 50", () => {
     "test",
     monday,
   );
-  assert.equal(standings(s).teams[0].totalPoints, 100);
+  assert.equal(standings(s).teams[0].totalPoints, 50);
   assert.equal(standings(s).fundsRaisedCents, 1e3);
   reverseEntry(
     s,
@@ -322,7 +342,14 @@ test("single attendance award, cutoffs, repeat and audited winner correction", (
   input.attendees[1].teamId = "dz";
   const o = createOrder(s, input, "test", "test", monday);
   fulfillOrder(s, o.id, 2e3, "test", monday);
-  for (const t of s.tickets) scanTicket(s, unseal(t.tokenBox), "test", monday);
+  for (const t of s.tickets)
+    scanTicket(
+      s,
+      unseal(t.tokenBox),
+      "test",
+      new Date("2026-11-19T19:00:00-06:00"),
+      { admissionCode: `W-${randomUUID()}` },
+    );
   const awardInput = {
     requestKey: randomUUID(),
     teamId: "axo",
@@ -365,7 +392,13 @@ test("partial item refund selects correct ticket; fee-only does not remove point
   assert.equal(standings(s).teams[0].ticketPoints, 250);
   assert.equal(standings(s).fundsRaisedCents, 2500);
   assert.throws(() =>
-    scanTicket(s, unseal(s.tickets[0].tokenBox), "test", monday),
+    scanTicket(
+      s,
+      unseal(s.tickets[0].tokenBox),
+      "test",
+      new Date("2026-11-19T19:00:00-06:00"),
+      { admissionCode: `W-${randomUUID()}` },
+    ),
   );
 });
 test("dispute suspends then restores without duplicate restoration", () => {
@@ -614,7 +647,13 @@ test("ticket team correction transfers original points and attendance without ch
   const s = state();
   const o = createOrder(s, orderInput(["basic"]), "test", "test", monday);
   fulfillOrder(s, o.id, 1e3, "test", monday);
-  scanTicket(s, unseal(s.tickets[0].tokenBox), "scanner", monday);
+  scanTicket(
+    s,
+    unseal(s.tickets[0].tokenBox),
+    "scanner",
+    new Date("2026-11-19T19:00:00-06:00"),
+    { admissionCode: `W-${randomUUID()}` },
+  );
   transferTicket(
     s,
     s.tickets[0].id,

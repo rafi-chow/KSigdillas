@@ -1,4 +1,8 @@
-# Netlify credit budget — updated November 5, 2026
+# Netlify credit budget — updated November 8, 2026
+
+## November 8 scoring/donation release
+
+The signed-in billing page reports **193.7 credits used / 106.3 remaining**, with all 12 previous production publishes now reflected (180 credits). Requests account for 3.3 credits, compute 6.2, and bandwidth 4.2. The period still ends November 21. Reserve **15 credits** for one coordinated scoring/donation publish: 208.7 used and 91.3 remaining before further traffic/runtime consumption. No upgrade, payment method, or credit purchase is involved. The prior same-assumption projected envelope of 224.22 becomes approximately **239.22** with this additional publish; actual runtime/traffic has already advanced, so that is an estimate, not a guaranteed remaining balance. Keep the existing alerts, avoid optional republishes, and monitor team usage through the event. The internal 30% final reserve is not established.
 
 ## November 5 hosted-link and direct-button releases
 

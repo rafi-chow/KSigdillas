@@ -144,6 +144,7 @@ export function allocateDonation(
   const value = {
     id: input.id,
     kind: input.kind,
+    basisUnits: max,
     allocations: input.allocations,
     revision: input.revision + 1,
   };
@@ -186,6 +187,8 @@ export function brotherReport(s: State) {
     ticketsSold: 0,
     ticketRevenueCents: 0,
     personallyDonatedCents: 0,
+    referredDonationCount: 0,
+    referredDonationCents: 0,
     goods: {} as Record<string, { quantity: number; points: number }>,
   }));
   for (const order of s.orders) {
@@ -199,12 +202,35 @@ export function brotherReport(s: State) {
       row.ticketRevenueCents += ticket.baseCents;
     }
   }
+  for (const donation of s.donations) {
+    const cents =
+      s.receipts.find((r) => r.id === donation.receiptId && !r.reversedAt)
+        ?.cents ?? 0;
+    const row =
+      rows.find((r) => r.brotherId === donation.referrerBrotherId) ??
+      rows.at(-1)!;
+    if (cents > 0) {
+      row.referredDonationCount++;
+      row.referredDonationCents += cents;
+    }
+  }
   for (const source of [
     ...s.receipts.filter((r) => r.category === "donation" && !r.reversedAt),
     ...s.entries.filter((e) => e.food && !e.reversedAt),
   ]) {
-    const allocations =
-      s.attributions.find((a) => a.id === source.id)?.allocations ?? [];
+    const attribution = s.attributions.find((a) => a.id === source.id);
+    const original =
+      "cents" in source
+        ? (attribution?.basisUnits ??
+          s.donations.find((d) => d.receiptId === source.id)?.amountCents)
+        : undefined;
+    const allocations = (attribution?.allocations ?? []).map((a) => ({
+      ...a,
+      units:
+        original && "cents" in source
+          ? Math.floor((a.units * source.cents) / original)
+          : a.units,
+    }));
     const total = "cents" in source ? source.cents : source.quantity;
     for (const row of rows) {
       const units = row.brotherId
@@ -224,6 +250,7 @@ export function brotherReport(s: State) {
   return {
     rows,
     roster: s.brothers,
+    onlineDonations: s.donations,
     orders: s.orders.map((o) => ({
       id: o.id,
       status: o.status,
@@ -254,6 +281,8 @@ export function brotherCsv(s: State) {
       "Tickets sold",
       "Ticket base revenue cents",
       "Personal donations cents",
+      "Referred donation count",
+      "Referred donation cents",
       "Goods (category:day, packages, points)",
     ],
     ...brotherReport(s).rows.map((r) => [
@@ -261,6 +290,8 @@ export function brotherCsv(s: State) {
       r.ticketsSold,
       r.ticketRevenueCents,
       r.personallyDonatedCents,
+      r.referredDonationCount,
+      r.referredDonationCents,
       JSON.stringify(r.goods),
     ]),
   ]

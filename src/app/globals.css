@@ -3216,3 +3216,21 @@ footer {
 .step-number { color: #85776b; }
 .leaderboard-head > p, .leaderboard-labels, .leaderboard-labels span, .team-cell small, .leaderboard-foot, .leaderboard-foot > span { color: #bcb5ae; }
 .footer-grid > p { color: #bcb5ae; }
+
+.contest-cards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.contest-card { min-width: 0; border: 1px solid #d4c5b5; border-radius: 6px; padding: 18px; background: #fffdf9; }
+.ops-card .contest-card h3 { margin: 0 0 16px; color: #781320; }
+.ops-card .contest-card dl { margin: 0; padding: 0; border: 0; grid-template-columns: minmax(0,1fr) auto; gap: 12px; }
+.contest-card dt { font-size: 14px; }
+.ops-card .contest-card dd { text-align: right; font-size: 14px; }
+.donation-record { border-top: 1px solid #d4c5b5; padding: 14px 0; overflow-wrap: anywhere; }
+.donation-record summary { min-height: 44px; cursor: pointer; padding-block: 10px; }
+.admission-controls { background: #fffdf9; padding: 22px; border: 1px solid #d4c5b5; border-top: 3px solid #781320; border-radius: 6px; }
+@media (max-width: 600px) {
+ .contest-cards { grid-template-columns: minmax(0,1fr); }
+ .ops-responsive-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+ .ops-responsive-table, .ops-responsive-table tbody, .ops-responsive-table tr, .ops-responsive-table td { display: block; width: 100%; }
+ .ops-responsive-table tr { border: 1px solid #d4c5b5; border-radius: 6px; padding: 12px; margin-bottom: 16px; background: #fffdf9; }
+ .ops-responsive-table td { border: 0; padding: 8px 0; overflow-wrap: anywhere; }
+ .ops-responsive-table td::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 600; color: #63574b; margin-bottom: 4px; }
+}

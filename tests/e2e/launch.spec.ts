@@ -114,7 +114,7 @@ test("chunked-size guard, legacy login closure and organizer-only launch checks"
 }) => {
   const oversized = await request.post("/api/operations/auth", {
     headers: {
-      origin: "http://127.0.0.1:3101",
+      origin: new URL(test.info().project.use.baseURL!).origin,
       "Content-Type": "application/json",
     },
     data: JSON.stringify({ id: "x".repeat(41000), password: "bad" }),
@@ -127,7 +127,7 @@ test("chunked-size guard, legacy login closure and organizer-only launch checks"
   ).toBe(410);
   expect((await request.get("/api/operations/launch")).status()).toBe(401);
   const signedIn = await request.post("/api/operations/auth", {
-    headers: { origin: "http://127.0.0.1:3101" },
+    headers: { origin: new URL(test.info().project.use.baseURL!).origin },
     data: { id: "scanner", password: "local-preview-scanner-only" },
   });
   expect(signedIn.status()).toBe(200);

@@ -1,5 +1,8 @@
 # Current Stripe Payment Link — November 5, 2026
 
+**November 8 verified state:** production has one genuine paid order and a 46-brother roster. The November 5 purchase verified actual signed Stripe delivery and ticket-email correlation; older pending/zero-roster statements below describe earlier checks. [The November 8 release](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) adds separate donation fulfillment and updated scoring.
+
+
 The organizer supplied https://buy.stripe.com/6oU4gz7Tugru8GeaOj2kw03 and requested website integration. This supersedes the old public link and the earlier $0-tax assumption for hosted purchases. It does not certify the organizer's registration, venue permissions or tax filings.
 
 ## Reviewed Stripe configuration

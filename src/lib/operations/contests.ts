@@ -54,6 +54,12 @@ export function contestTotals(s: State) {
     const mondayPackages = entries
       .filter((e) => e.food && e.day === monday)
       .reduce((n, e) => n + e.quantity, 0);
+    const mondayPoints = entries
+      .filter((e) => e.food && e.day === monday)
+      .reduce((n, e) => n + e.points, 0);
+    const tuesdayPoints = entries
+      .filter((e) => e.day === tuesday && ["pie", "slap"].includes(e.ruleId))
+      .reduce((n, e) => n + e.points, 0);
     const tuesdayCents = s.receipts
       .filter(
         (r) =>
@@ -78,6 +84,8 @@ export function contestTotals(s: State) {
       teamId: team.id,
       name: team.displayName,
       mondayPackages,
+      mondayPoints,
+      tuesdayPoints,
       tuesdayCents,
       hangMillis,
       caps: Object.fromEntries(

@@ -114,7 +114,7 @@ test("staff score entry appears in public totals; rule edit is prospective", asy
   await form.getByRole("button", { name: "Save rule", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Rule updated.");
 });
-test("scanner lookup admits once; duplicate scan is refused; no extra ticket points", async ({
+test("scanner rehearsal verifies QR repeatedly without consuming ticket or adding attendance", async ({
   page,
 }) => {
   await signIn(page, "scanner");
@@ -136,13 +136,11 @@ test("scanner lookup admits once; duplicate scan is refused; no extra ticket poi
   await page.getByRole("button", { name: "Check-in", exact: true }).click();
   await page
     .getByLabel("Ticket link or QR token")
-    .fill(`http://127.0.0.1:3101${fixture.tickets[0].url}`);
+    .fill(new URL(fixture.tickets[0].url, page.url()).href);
   await page.getByRole("button", { name: "Check ticket", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText(
-    /Valid ticket|Already checked in/,
-  );
+  await expect(page.getByRole("status")).toContainText(/Rehearsal: valid QR/);
   await page.getByRole("button", { name: "Check ticket", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Already checked in.");
+  await expect(page.getByRole("status")).toContainText("no attendance counted");
   await expect(
     page.getByRole("button", { name: "Rules & access", exact: true }),
   ).toHaveCount(0);
@@ -191,7 +189,7 @@ test("security: private API, forged mutation, scorer authorization, logout and c
   ).toBeVisible();
 });
 
-test("QR image decoder reads a generated ticket image and rejects duplicate admission", async ({
+test("QR image decoder reads a generated ticket image safely in rehearsal", async ({
   page,
 }) => {
   const fixture = JSON.parse(
@@ -200,7 +198,7 @@ test("QR image decoder reads a generated ticket image and rejects duplicate admi
   await signIn(page, "scanner");
   await page.getByRole("button", { name: "Check-in", exact: true }).click();
   const buffer = await QRCode.toBuffer(
-    `http://127.0.0.1:3101${fixture.tickets[1].url}`,
+    new URL(fixture.tickets[1].url, page.url()).href,
     { width: 360, margin: 3 },
   );
   await page.getByLabel("Read a ticket QR image").setInputFiles({
@@ -208,15 +206,13 @@ test("QR image decoder reads a generated ticket image and rejects duplicate admi
     mimeType: "image/png",
     buffer,
   });
-  await expect(page.getByRole("status")).toContainText(
-    /Valid ticket|Already checked in/,
-  );
+  await expect(page.getByRole("status")).toContainText(/Rehearsal: valid QR/);
   await page.getByLabel("Read a ticket QR image").setInputFiles({
     name: "synthetic-ticket.png",
     mimeType: "image/png",
     buffer,
   });
-  await expect(page.getByRole("status")).toContainText("Already checked in");
+  await expect(page.getByRole("status")).toContainText("no attendance counted");
 });
 
 test("brother roster, seller correction, personal donation and private CSV reconcile in the staff UI", async ({
@@ -343,7 +339,7 @@ test("packet public guide shows exact Monday points, caps, social tags and both 
   await page.getByText("Contest awards & points", { exact: true }).click();
   await expect(
     page
-      .getByText("Tuesday pie/slap revenue winner", { exact: true })
+      .getByText("Tuesday pie/slap points winner", { exact: true })
       .locator(".."),
   ).toContainText("300 points");
   await expect(
@@ -449,9 +445,14 @@ test("staff rejects excess supplies, shows box totals and verifies social tags w
   });
   await expect(
     daily
-      .getByRole("row")
-      .filter({ hasText: chapter.toUpperCase() })
-      .getByRole("cell")
+      .locator(".contest-card")
+      .filter({
+        has: page.getByRole("heading", {
+          name: chapter.toUpperCase(),
+          exact: true,
+        }),
+      })
+      .locator("dd")
       .nth(1),
   ).toHaveText("4");
   await form.getByLabel("Item or activity").selectOption("feed");

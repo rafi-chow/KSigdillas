@@ -35,6 +35,7 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
   const [report, setReport] = useState<Report | null>(null);
   const [notice, setNotice] = useState("");
   const [sort, setSort] = useState("ticketsSold");
+  const [donationFilter, setDonationFilter] = useState("all");
   const [query, setQuery] = useState("");
   const refresh = useCallback(async () => {
     const response = await fetch("/api/operations/brothers", {
@@ -89,7 +90,10 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
     .filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => {
       const key = sort as
-        "ticketsSold" | "ticketRevenueCents" | "personallyDonatedCents";
+        | "ticketsSold"
+        | "ticketRevenueCents"
+        | "personallyDonatedCents"
+        | "referredDonationCents";
       return b[key] - a[key] || a.name.localeCompare(b.name);
     });
   function rosterSubmit(
@@ -116,8 +120,9 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
       <section className="ops-card">
         <h2>BROTHER CONTRIBUTIONS</h2>
         <p>
-          Buyer-reported ticket sales and verified personal donations. Ticket
-          fees, food values and personal gifts are reported separately.
+          Ticket sales, verified personal donations and referred donations. A
+          referral credits the brother who sent the donor; it does not mean the
+          brother paid.
         </p>
         <p role="status">{notice}</p>
         <div className="ops-inline">
@@ -130,6 +135,7 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
             <select value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="ticketsSold">Tickets sold</option>
               <option value="ticketRevenueCents">Ticket revenue</option>
+              <option value="referredDonationCents">Referred donations</option>
               <option value="personallyDonatedCents">
                 Personal cash donations
               </option>
@@ -140,27 +146,37 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
           Download brother CSV
         </a>
         <div className="ops-table-wrap">
-          <table className="ops-table">
+          <table className="ops-table ops-responsive-table">
             <thead>
               <tr>
                 <th>Brother</th>
                 <th>Tickets sold</th>
                 <th>Ticket revenue</th>
                 <th>Personally donated</th>
+                <th>Referred donations</th>
                 <th>Donated packages / points</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((row) => (
                 <tr key={row.brotherId ?? "none"}>
-                  <td>
+                  <td data-label="Brother">
                     {row.name}
                     {!row.active ? " (archived)" : ""}
                   </td>
-                  <td>{row.ticketsSold}</td>
-                  <td>{money(row.ticketRevenueCents)}</td>
-                  <td>{money(row.personallyDonatedCents)}</td>
-                  <td>
+                  <td data-label="Tickets sold">{row.ticketsSold}</td>
+                  <td data-label="Ticket revenue">
+                    {money(row.ticketRevenueCents)}
+                  </td>
+                  <td data-label="Personally donated">
+                    {money(row.personallyDonatedCents)}
+                  </td>
+                  <td data-label="Referred donations">
+                    {money(row.referredDonationCents)} ·{" "}
+                    {row.referredDonationCount}{" "}
+                    {row.referredDonationCount === 1 ? "gift" : "gifts"}
+                  </td>
+                  <td data-label="Donated packages / points">
                     {Object.entries(row.goods).map(([key, item]) => (
                       <p key={key}>
                         {key} · {item.quantity} packages · {item.points} points
@@ -172,6 +188,105 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
             </tbody>
           </table>
         </div>
+      </section>
+      <section className="ops-card">
+        <h2>Online donations</h2>
+        <p>
+          50 chapter points per complete $5, calculated per donation. Gifts
+          under $5 earn no points. Refunds and disputes update totals
+          automatically.
+        </p>
+        <label>
+          Donation status
+          <select
+            value={donationFilter}
+            onChange={(e) => setDonationFilter(e.target.value)}
+          >
+            <option value="all">All donations</option>
+            <option value="review">Needs review</option>
+            <option value="paid">Paid</option>
+            <option value="partially-refunded">Partially refunded</option>
+            <option value="refunded">Refunded</option>
+            <option value="disputed">Disputed</option>
+          </select>
+        </label>
+        {!report.onlineDonations.length && <p>No online donations yet.</p>}
+        {report.onlineDonations
+          .filter(
+            (d) =>
+              donationFilter === "all" ||
+              (donationFilter === "review" &&
+                (d.review.length > 0 || d.error)) ||
+              d.status === donationFilter,
+          )
+          .map((d) => (
+            <details key={`${d.id}:${d.revision}`} className="donation-record">
+              <summary>
+                {money(d.amountCents)} ·{" "}
+                {d.teamId?.toUpperCase() ?? "No chapter"} · {d.status}
+                {d.review.length || d.error ? " · Needs review" : ""}
+              </summary>
+              <p>Reference: {d.id}</p>
+              {d.receiptUrl && (
+                <p>
+                  <a
+                    href={d.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Stripe receipt
+                  </a>
+                </p>
+              )}
+              <p>
+                Refunded: {money(d.refundedCents)} · Referred by:{" "}
+                {report.roster.find((b) => b.id === d.referrerBrotherId)
+                  ?.name ?? "Unassigned"}
+              </p>
+              {d.referrerRaw && <p>Original referral: {d.referrerRaw}</p>}
+              {d.review.map((issue) => (
+                <p key={issue}>{issue}</p>
+              ))}
+              {d.error && <p role="status">{d.error}</p>}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const v = Object.fromEntries(new FormData(e.currentTarget));
+                  void save("donation-attribution", {
+                    id: d.id,
+                    revision: d.revision,
+                    teamId: v.teamId || null,
+                    brotherId: v.brotherId || null,
+                    reason: v.reason,
+                  });
+                }}
+              >
+                <label>
+                  Donation chapter
+                  <select name="teamId" defaultValue={d.teamId ?? ""}>
+                    <option value="">No chapter</option>
+                    {["axo", "ddd", "dz", "zta"].map((id) => (
+                      <option key={id} value={id}>
+                        {id.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <BrotherSelect
+                  brothers={roster}
+                  value={d.referrerBrotherId}
+                  label="Referring brother"
+                />
+                <label>
+                  Donation correction reason
+                  <input name="reason" required maxLength={300} />
+                </label>
+                <button className="ops-action">
+                  Save donation attribution
+                </button>
+              </form>
+            </details>
+          ))}
       </section>
       <section className="ops-card">
         <h2>ROSTER</h2>

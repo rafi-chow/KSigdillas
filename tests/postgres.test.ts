@@ -280,7 +280,7 @@ test("stored pre-packet rules upgrade with reviewed history reversal and repeata
     );
     assert.deepEqual(
       versions.rows.map((r) => r.version),
-      [1, 2, 3],
+      [1, 2, 3, 4],
     );
   } finally {
     await db.close();
@@ -369,7 +369,8 @@ test(
             next,
             unseal(ticket.tokenBox),
             "concurrent-test-scanner",
-            now,
+            new Date("2026-11-19T19:00:00-06:00"),
+            { admissionCode: `W-${randomUUID()}` },
           ),
         );
         latencies.push(performance.now() - startScan);
@@ -545,7 +546,15 @@ test(
       const token = unseal(s.tickets[0].tokenBox);
       const scans = await Promise.all(
         Array.from({ length: 12 }, () =>
-          db.transaction((s) => scanTicket(s, token, "scanner", now)),
+          db.transaction((s) =>
+            scanTicket(
+              s,
+              token,
+              "scanner",
+              new Date("2026-11-19T19:00:00-06:00"),
+              { admissionCode: `W-${randomUUID()}` },
+            ),
+          ),
         ),
       );
       assert.equal(scans.filter((x) => x.admitted).length, 1);
@@ -555,7 +564,13 @@ test(
             .slice(offset, offset + 20)
             .map((ticket) =>
               db.transaction((s) =>
-                scanTicket(s, unseal(ticket.tokenBox), "scanner", now),
+                scanTicket(
+                  s,
+                  unseal(ticket.tokenBox),
+                  "scanner",
+                  new Date("2026-11-19T19:00:00-06:00"),
+                  { admissionCode: `W-${randomUUID()}` },
+                ),
               ),
             ),
         );
@@ -663,7 +678,8 @@ test("backup restoration into a new database preserves tickets, points and QR va
         s,
         unseal(recovered.tickets[0].tokenBox),
         "restored-scanner",
-        now,
+        new Date("2026-11-19T19:00:00-06:00"),
+        { admissionCode: `W-${randomUUID()}` },
       ),
     );
     assert.equal(result.admitted, true);

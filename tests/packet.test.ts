@@ -163,86 +163,103 @@ test("all capped categories, independent chapters and uncapped ordinary days", (
   }
 });
 
-test("Monday winner counts accepted whole packages rather than donation points", () => {
+test("Monday winner uses accepted supply points even with fewer packages", () => {
   const s = state();
   addEntry(s, input("cheese", 4), "test", monday);
   addEntry(s, input("chicken", 3, "dz"), "test", monday);
-  assert.equal(
-    standings(s).teams.find((t) => t.id === "dz")!.donationPoints,
-    525,
+  assert.deepEqual(
+    contestTotals(s)
+      .slice(0, 2)
+      .map((t) => [t.mondayPackages, t.mondayPoints]),
+    [
+      [4, 300],
+      [3, 525],
+    ],
   );
   assert.throws(
-    () => award(s, result("food:2026-11-16"), "test", monday),
+    () => award(s, result("food:2026-11-16", "dz"), "test", monday),
     /cutoff/,
   );
   assert.throws(
     () =>
       award(
         s,
-        { ...result("food:2026-11-16"), boxesVerified: false },
+        { ...result("food:2026-11-16", "dz"), boxesVerified: false },
         "test",
         end,
       ),
     /physical/,
   );
   assert.throws(
-    () => award(s, result("food:2026-11-16", "dz"), "test", end),
-    /box package count/,
+    () => award(s, result("food:2026-11-16"), "test", end),
+    /supply points/,
   );
-  award(s, result("food:2026-11-16"), "test", end);
-  award(s, result("food:2026-11-16"), "test", end);
-  assert.equal(
-    standings(s).teams.find((t) => t.id === "axo")!.bonusPoints,
-    500,
-  );
-  assert.throws(() => award(s, result("food:2026-11-17"), "test", end));
-  assert.throws(() => award(s, result("food:2026-11-18"), "test", end));
+  award(s, result("food:2026-11-16", "dz"), "test", end);
+  award(s, result("food:2026-11-16", "dz"), "test", end);
+  assert.equal(standings(s).teams.find((t) => t.id === "dz")!.bonusPoints, 500);
 });
 
-test("Tuesday ranks pie/slap money only; donations and reversed purchases are excluded", () => {
+test("Tuesday uses pie/slap points rather than dollars and excludes other days and donations", () => {
   const s = state();
-  addEntry(s, input("pie", 2, "axo", "2026-11-17"), "test", monday);
-  addEntry(s, input("slap", 1, "axo", "2026-11-17"), "test", monday);
-  addEntry(s, input("slap", 2, "dz", "2026-11-17"), "test", monday);
-  const b = addEntry(s, input("slap", 2, "dz", "2026-11-17"), "test", monday);
+  const pies = addEntry(
+    s,
+    input("pie", 3, "axo", "2026-11-17"),
+    "test",
+    monday,
+  );
+  addEntry(s, input("slap", 4, "dz", "2026-11-17"), "test", monday);
   addDonation(
     s,
     {
       requestKey: randomUUID(),
-      teamId: "axo",
+      teamId: "dz",
       cents: 10000,
-      reference: "Direct donation excluded",
+      reference: "Excluded gift",
     },
     "test",
     monday,
   );
-  addEntry(s, input("pie", 10, "axo", "2026-11-16"), "test", monday);
+  addEntry(s, input("pie", 10, "dz", "2026-11-16"), "test", monday);
   addEntry(s, input("pie", 10, null, "2026-11-17"), "test", monday);
   assert.deepEqual(
     contestTotals(s)
       .slice(0, 2)
-      .map((t) => t.tuesdayCents),
-    [600, 800],
+      .map((t) => [t.tuesdayCents, t.tuesdayPoints]),
+    [
+      [600, 45],
+      [800, 40],
+    ],
   );
   assert.throws(
-    () => award(s, result("participation:2026-11-17"), "test", end),
-    /pie\/slap revenue/,
+    () => award(s, result("participation:2026-11-17", "dz"), "test", end),
+    /pie\/slap points/,
   );
-  award(s, result("participation:2026-11-17", "dz"), "test", end);
+  award(s, result("participation:2026-11-17"), "test", end);
   reverseEntry(
     s,
-    { requestKey: randomUUID(), id: b, reason: "Refund two slaps" },
+    { requestKey: randomUUID(), id: pies, reason: "Reverse pies" },
     "test",
     end,
   );
   assert.equal(s.awards[0].reviewRequired, true);
-  assert.equal(contestTotals(s)[1].tuesdayCents, 400);
-  award(s, result("participation:2026-11-17"), "test", end);
-  assert.equal(
-    standings(s).teams.find((t) => t.id === "axo")!.bonusPoints,
-    300,
+  award(s, result("participation:2026-11-17", "dz"), "test", end);
+  assert.equal(standings(s).teams.find((t) => t.id === "dz")!.bonusPoints, 300);
+  assert.equal(standings(s).teams.find((t) => t.id === "axo")!.bonusPoints, 0);
+});
+
+test("equal Tuesday points with unequal revenue remains a staff-resolved tie", () => {
+  const s = state();
+  addEntry(s, input("pie", 2, "axo", "2026-11-17"), "test", monday);
+  addEntry(s, input("slap", 1, "axo", "2026-11-17"), "test", monday);
+  addEntry(s, input("slap", 4, "dz", "2026-11-17"), "test", monday);
+  assert.deepEqual(
+    contestTotals(s)
+      .slice(0, 2)
+      .map((t) => t.tuesdayPoints),
+    [40, 40],
   );
-  assert.equal(standings(s).teams.find((t) => t.id === "dz")!.bonusPoints, 0);
+  award(s, result("participation:2026-11-17"), "test", end);
+  assert.equal(s.awards[0].teamId, "axo");
 });
 
 test("social requires both tags, scores 25/50/50 and deduplicates feed/reel URLs", () => {

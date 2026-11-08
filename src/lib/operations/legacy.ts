@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { State } from "./model";
 import { digest, opaqueToken, seal } from "./crypto";
+import { admissionWindowOpen, attachAdmission } from "./admissions";
 import { audit } from "./service";
 export const legacyTickets = z.array(
   z
@@ -93,6 +94,22 @@ export function importLegacyTickets(
       tokenHash: digest(ticketToken),
       tokenBox: seal(ticketToken),
     });
+    if (row.checkedInAt) {
+      const ticket = s.tickets.find((t) => t.id === ticketId)!;
+      if (admissionWindowOpen(new Date(row.checkedInAt)))
+        attachAdmission(
+          s,
+          ticket,
+          `L-${ticket.id}`,
+          "eventbrite-import",
+          new Date(row.checkedInAt),
+        );
+      else {
+        ticket.rehearsalAt = row.checkedInAt;
+        ticket.checkedInAt = null;
+        ticket.checkedInBy = null;
+      }
+    }
     if (row.teamId)
       s.ledger.push({
         id: randomUUID(),

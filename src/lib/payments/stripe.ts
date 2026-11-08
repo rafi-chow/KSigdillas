@@ -16,6 +16,7 @@ import { appUrl } from "../email/delivery";
 import { publicPrices, purchaseTerms } from "../policies";
 import { assertLaunchReady } from "../launch";
 import { includedPaymentLinkTax } from "./paymentLink";
+import { donationLinkId, reconcileDonation } from "./donations";
 export const stripeApiVersion = "2026-10-28.endive" as const;
 export function checkoutConfig(requireSales = false) {
   const env = process.env;
@@ -963,6 +964,15 @@ export async function processStripeWork(
             ? object.charge
             : null;
       let recognizedPaymentLink = false;
+      let donation = event.type.startsWith("checkout.session.")
+        ? state.donations.find((d) => d.id === object.id)
+        : state.donations.find(
+            (d) =>
+              (paymentId && d.paymentId === paymentId) ||
+              (chargeId && d.chargeId === chargeId),
+          );
+      let recognizedDonation = Boolean(donation);
+      let donationReconciled = false;
       let attempt = event.type.startsWith("checkout.session.")
         ? state.checkouts.find((c) => c.sessionId === object.id)
         : state.checkouts.find(
@@ -970,22 +980,31 @@ export async function processStripeWork(
               (paymentId && c.paymentId === paymentId) ||
               (chargeId && c.chargeId === chargeId),
           );
-      if (
-        !attempt &&
-        event.type.startsWith("checkout.session.") &&
-        process.env.STRIPE_PAYMENT_LINK_ENABLED === "true"
-      ) {
+      if (!attempt && !donation && event.type.startsWith("checkout.session.")) {
         const linkId = process.env.STRIPE_PAYMENT_LINK_ID;
-        if (!linkId?.startsWith("plink_"))
-          throw new Error("Reviewed Payment Link ID is missing.");
+
         const session = await eventGateway.session(object.id);
         const actualLink =
           typeof session.payment_link === "string"
             ? session.payment_link
             : session.payment_link?.id;
-        recognizedPaymentLink = actualLink === linkId;
+        recognizedDonation = actualLink === donationLinkId;
+        if (recognizedDonation) {
+          donation = await reconcileDonation(
+            store,
+            session.id,
+            eventGateway,
+            now,
+          );
+          donationReconciled = true;
+        }
+        recognizedPaymentLink =
+          process.env.STRIPE_PAYMENT_LINK_ENABLED === "true" &&
+          Boolean(linkId?.startsWith("plink_")) &&
+          actualLink === linkId;
         if (
-          actualLink === linkId &&
+          recognizedPaymentLink &&
+          linkId &&
           session.status === "complete" &&
           session.payment_status === "paid"
         ) {
@@ -999,13 +1018,18 @@ export async function processStripeWork(
         }
       }
       // Unknown events stay reviewable. Periodic session reconciliation handles refund/dispute objects with only charge IDs.
+      if (donation && !donationReconciled)
+        await reconcileDonation(store, donation.id, eventGateway, now);
       if (attempt?.sessionId)
         await reconcileSession(store, attempt.sessionId, eventGateway, now);
       await store.transaction((s) => {
         const e = s.providerEvents.find((e) => e.id === row.id)!;
-        e.status = attempt || recognizedPaymentLink ? "processed" : "review";
+        e.status =
+          attempt || recognizedPaymentLink || recognizedDonation
+            ? "processed"
+            : "review";
         e.error =
-          attempt || recognizedPaymentLink
+          attempt || recognizedPaymentLink || recognizedDonation
             ? undefined
             : "Unmatched Stripe event; reconcile/import the associated order.";
         e.leaseUntil = undefined;
@@ -1014,19 +1038,24 @@ export async function processStripeWork(
         // now associated with this order; never clear a financial review.
         const associated =
           attempt && s.checkouts.find((c) => c.id === attempt.id);
-        if (associated) {
+        const associatedDonation =
+          donation && s.donations.find((d) => d.id === donation.id);
+        if (associated || associatedDonation) {
           for (const earlier of s.providerEvents) {
             if (
               earlier.status === "review" &&
               earlier.error ===
                 "Unmatched Stripe event; reconcile/import the associated order." &&
               earlier.verified &&
-              ((associated.paymentId &&
-                earlier.verified.paymentId === associated.paymentId) ||
-                (associated.chargeId &&
-                  earlier.verified.chargeId === associated.chargeId) ||
+              (((associated?.paymentId || associatedDonation?.paymentId) &&
+                earlier.verified.paymentId ===
+                  (associated?.paymentId || associatedDonation?.paymentId)) ||
+                ((associated?.chargeId || associatedDonation?.chargeId) &&
+                  earlier.verified.chargeId ===
+                    (associated?.chargeId || associatedDonation?.chargeId)) ||
                 (earlier.type.startsWith("checkout.session.") &&
-                  earlier.objectId === associated.sessionId))
+                  earlier.objectId ===
+                    (associated?.sessionId || associatedDonation?.id)))
             ) {
               earlier.status = "pending";
               earlier.error = undefined;
@@ -1046,6 +1075,43 @@ export async function processStripeWork(
             Math.min(3600000, 30000 * 2 ** Math.min(e.attempts, 7)),
         ).toISOString();
         e.leaseUntil = undefined;
+      });
+    }
+  }
+  const donations = (await store.read()).donations
+    .filter(
+      (d) =>
+        Date.parse(d.nextCheckAt) <= now.getTime() &&
+        (!d.leaseUntil || Date.parse(d.leaseUntil) <= now.getTime()),
+    )
+    .sort((a, b) => a.nextCheckAt.localeCompare(b.nextCheckAt))
+    .slice(0, limit);
+  for (const donation of donations) {
+    if (Date.now() >= deadline) break;
+    const claimed = await store.transaction((s) => {
+      const d = s.donations.find((d) => d.id === donation.id)!;
+      if (
+        Date.parse(d.nextCheckAt) > now.getTime() ||
+        (d.leaseUntil && Date.parse(d.leaseUntil) > now.getTime())
+      )
+        return false;
+      d.leaseUntil = new Date(now.getTime() + 120000).toISOString();
+      return true;
+    });
+    if (!claimed) continue;
+    sessionCount++;
+    try {
+      await reconcileDonation(store, donation.id, gateway, now);
+    } catch {
+      failed++;
+      await store.transaction((s) => {
+        const d = s.donations.find((d) => d.id === donation.id)!;
+        d.error = "Donation reconciliation failed; retry queued.";
+        d.nextCheckAt = new Date(now.getTime() + 60000).toISOString();
+      });
+    } finally {
+      await store.transaction((s) => {
+        s.donations.find((d) => d.id === donation.id)!.leaseUntil = undefined;
       });
     }
   }

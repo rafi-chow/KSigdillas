@@ -170,10 +170,7 @@ export function EventGuide() {
                   Monday caps apply per sorority across all donors and approved
                   varieties. Staff will refuse excess supplies.
                 </li>
-                <li>
-                  Monday’s supply-box winner has the most accepted packages, not
-                  the highest supply point total.
-                </li>
+                <li>Monday’s winner has the most accepted supply points.</li>
               </ul>
             </details>
             <details className="guide-disclosure" id="activity-points">
@@ -208,6 +205,10 @@ export function EventGuide() {
                 </p>
               </div>
               <p className="guide-copy">
+                Points are calculated per donation. Gifts under $5 earn no
+                points.
+              </p>
+              <p className="guide-copy">
                 Instagram posts must tag @kappasigmauta and @movember.usa. Staff
                 verifies each post once.
               </p>
@@ -225,17 +226,16 @@ export function EventGuide() {
                   ))}
               </div>
               <ul className="guide-copy">
+                <li>Monday: most accepted supply points.</li>
                 <li>
-                  Monday: most accepted packages in the chapter’s supply box.
-                </li>
-                <li>
-                  Tuesday: most money from pie/slap purchases only. Direct
-                  donations and ticket sales do not count. Staff resolves ties.
+                  Tuesday: most pie/slap points. Direct donations and ticket
+                  sales do not count. Staff resolves ties.
                 </li>
                 <li>
                   Wednesday: one overall longest-hang winner. Each hanging
                   attempt also earns points.
                 </li>
+                <li>Thursday: most unique people attending the event.</li>
               </ul>
             </details>
             <div className="guide-award-note">

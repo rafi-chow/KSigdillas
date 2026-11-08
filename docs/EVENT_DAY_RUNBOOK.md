@@ -1,12 +1,14 @@
 # KSigdillas event-day runbook
 
+**November 8 scoring and donations:** [Current rules and verification](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) supersedes earlier package-count/revenue winner wording and pooled monetary-donation rounding. Donation checkout: https://donate.stripe.com/7sYaEX4Hidfif4Cg8D2kw02.
+
 **Current hosted checkout:** [November 5 Payment Link integration](NEW_PAYMENT_LINK_2026-11-05.md) records the organizer's $11.58/$17.20 inclusive-tax prices and replaces the earlier online-price and closed-hosted-sales status below. Embedded checkout remains disabled. The Stripe owner must close the independently shared link at the 6 PM presale cutoff.
 
 **November 5 preparation:** [Current release and remaining acceptance](GO_LIVE_PREPARATION_2026-11-05.md) records minute-by-minute due work, five-minute heartbeat checks and read-only monitor access.
 
 **Latest release:** https://ksigdillas.netlify.app offers the approved hosted Stripe Payment Link; embedded checkout remains disabled. See [current payment verification and remaining evidence](NEW_PAYMENT_LINK_2026-11-05.md). Native maintenance runs without a browser; independent monitoring delivered a real incident and automatic recovery to the designated operator inbox.
 
-Scoring instructions below follow the packet; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including organizer acceptance of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
+Scoring instructions below follow the organizer's November 8 clarification; see `PACKET_VERIFICATION.md` for verification. Complete `PRODUCTION_READINESS_PLAN.md`, including organizer acceptance of the confirmed caps and winner measures, before using this runbook for live scorekeeping.
 
 Current release status: event operations, Stripe integration code, brother
 tracking and Brevo delivery are deployed. The verified sender, real delivery
@@ -33,9 +35,11 @@ preview credentials on a public deployment.
 
 ## Admission
 
-Scan the guest's QR or read an image of it. A successful scan shows name, team, and
-Basicdilla/Meat-Veggie tier. Issue that wristband and admit once. Already-used,
-unpaid, refunded, suspended, or unknown tickets must not receive another admission.
+Before the event, leave **Rehearsal mode** on. It checks a QR without using the ticket or adding attendance. Event admission is November 19, 6–9 PM Central; an organizer can document an exceptional hours override.
+
+At the door, turn rehearsal off, check whether the person already has a wristband, and enter the wristband/admission ID (for example, W001). Each physical person gets one ID across all scanners. Scan the QR or read an image, verify the Basicdilla/Meat-Veggie tier, and admit only on a successful result. Reusing a wristband ID links an additional ticket to that existing person without increasing attendance. Group bookings admit each separate guest using a separate ID. Never deduplicate people by buyer email or name alone.
+
+Already-used, unpaid, refunded, suspended, or unknown tickets must not receive another admission. If two tickets were mistakenly counted for one person, organizer lookup offers **Link duplicate attendee** with an existing ID and a reason. Correct a mistaken scan with **Correct check-in**. These actions retain audit history and flag finalized attendance awards for review.
 
 If a camera is unavailable, use the QR image reader, paste the ticket link, or
 search the guest's name/order reference under Orders. Check-in staff see only the
@@ -60,7 +64,7 @@ when known; a cash sale creates no processing fee.
 ## Brother contributions
 
 Organizer opens **Brother contributions** for ticket units/base revenue, personal
-cash gifts, and donated packages/points. Staff records “Money donated by” or
+cash gifts, referred online donations, and donated packages/points. Staff records “Money donated by” or
 “Food donated by” independently of the team receiving points. Use the real roster
 and approved aliases; unknown or ambiguous referrals remain unassigned.
 
@@ -82,20 +86,28 @@ exceed the verified amount/packages. Keep the report and CSV private.
 - Slap: $2 / 10 points; pie: $2 / 15. Verify money before recording paid activity
   participation. Hanging: 10 points per attempt; no invented dollar charge.
 - Monetary donations are recorded separately from tickets and paid activities.
-  Complete $5 increments earn points; the remaining dollars carry forward.
+  Each verified donation earns 50 points per complete $5. Under $5 earns no points; $5 earns 50, $10 earns 100, and $7 earns 50. Separate gifts never pool their remainders. Online gifts import automatically after Stripe confirms payment; do not enter them again as manual receipts. Choose a chapter at checkout for chapter credit. No chapter means funds only.
 - Stories earn 25; reels/feed posts earn 50. Verify both required Instagram tags
   and evidence; a post cannot be credited again as another format.
 - Monday: use four labeled sorority boxes. Reconcile accepted whole retail packages
-  with the records; the most packages wins 500, regardless of their point values.
-- Tuesday: the chapter with the most verified pie/slap revenue wins 300. Exclude
+  with the records; the most accepted supply points wins 500. Package counts remain a physical reconciliation aid.
+- Tuesday: the chapter with the most pie/slap points wins 300. Exclude
   direct donations, ticket sales and fees; deduct reversed/refunded purchases.
 - Wednesday overall longest-hang winner receives 300. Each daily contest closes
   at 3 PM that day. There is no Tuesday/Wednesday food award.
 - Volleyball and eating each award 400/200/100 for first/second/third, based on
-  official results. Attendance closes at 9 PM Thursday and awards 1,000 once.
+  official results. Attendance is the number of unique people admitted, closes at 9 PM Thursday, and awards 1,000 once.
   Organizer resolves ties and finalizes each contest once. Retain result evidence.
 - Never edit historical receipts to hide a mistake. Use an audited reversal or
   result correction and review affected finalized awards.
+
+## Donation receipts and recovery
+
+Use **Brother contributions → Online donations** to inspect payment status, chapter, referral, and the Stripe receipt when available. An unknown chapter/referral stays reviewable; correct it with a reason. A referring brother is not automatically the personal donor. The CSV reports referrals separately from ticket sales and verified personal donations.
+
+Stripe generates payment receipts. The Stripe owner should enable **Settings → Business → Customer emails → Successful payments** for automatic delivery ([Stripe instructions](https://docs.stripe.com/receipts#automatic)). This account-wide setting is not verifiable through the available restricted key; the Dashboard requires the owner's login. Use ordinary payment receipts without a tax-deduction claim. No admission ticket or QR is sent for a donation. Paid invoice/PDF creation is not enabled by this release.
+
+If a signed event is missed, use the private CLI with production environment loaded explicitly: `npm run ops -- check-donations`, then `npm run ops -- import-donations`. The latter reconciles paid donations, including actual refund/dispute state, without issuing tickets or charging anyone. Review unresolved provider events and donation errors; the existing monitor reports business attention. Do not duplicate an online gift as a cash donation.
 
 ## Problems and recovery
 

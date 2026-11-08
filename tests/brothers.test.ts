@@ -108,7 +108,7 @@ test("brother sales, personal money, food, reversal and seller correction reconc
   assert.equal(row(a.id).personallyDonatedCents, 1000);
   assert.equal(
     standings(s).teams.find((t) => t.id === "axo")!.donationPoints,
-    100,
+    50,
   );
   reverseEntry(
     s,
@@ -182,7 +182,13 @@ test("brother sales, personal money, food, reversal and seller correction reconc
     250,
   );
   const t = s.tickets.find((t) => t.id === o.ticketIds[1])!;
-  scanTicket(s, unseal(t.tokenBox), "scanner", now);
+  scanTicket(
+    s,
+    unseal(t.tokenBox),
+    "scanner",
+    new Date("2026-11-19T19:00:00-06:00"),
+    { admissionCode: "W001" },
+  );
   transferTicket(s, t.id, "dz", "Correct team", "test", now);
   assert.equal(row(b.id).ticketsSold, 2);
   reverseEntry(

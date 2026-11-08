@@ -15,6 +15,11 @@ import type { Category, LedgerEntry, Order, Role, State } from "./model";
 import { attributeInitialDonation, validateBrother } from "./brothers";
 import { purchaseTerms } from "../policies";
 import { donationProducts } from "../eventConfig";
+import {
+  activeAdmissions,
+  admissionWindowOpen,
+  attachAdmission,
+} from "./admissions";
 
 import {
   capRemaining,
@@ -231,20 +236,63 @@ export function scanTicket(
   token: string,
   operator: string,
   now: Date,
+  options: {
+    admissionCode?: string;
+    rehearsal?: boolean;
+    overrideReason?: string;
+  } = {},
 ) {
   const ticket = s.tickets.find((t) => t.tokenHash === digest(token));
   if (!ticket) throw new Error("Ticket not found.");
   if (!ticket.valid)
     throw new Error("This ticket is unpaid, refunded, or suspended.");
+  if (options.rehearsal) {
+    ticket.rehearsalAt = iso(now);
+    audit(
+      s,
+      operator,
+      "check-in-rehearsal",
+      ticket.id,
+      "QR verified; no admission counted",
+      now,
+    );
+    return {
+      admitted: false,
+      ticket,
+      message:
+        "Rehearsal: valid QR. Ticket remains unused; no attendance counted.",
+    };
+  }
+  if (!admissionWindowOpen(now) && !options.overrideReason?.trim())
+    throw new Error(
+      "Check-in is outside event hours. Use rehearsal mode or an organizer override.",
+    );
   if (ticket.checkedInAt)
     return {
       admitted: false,
       ticket,
       message: "Already checked in. Do not admit again.",
     };
-  ticket.checkedInAt = iso(now);
-  ticket.checkedInBy = operator;
-  audit(s, operator, "check-in", ticket.id, "First admission", now);
+  if (!options.admissionCode)
+    throw new Error(
+      "A wristband or admission ID is required. Confirm this person has not already entered.",
+    );
+  const { alreadyAdmitted } = attachAdmission(
+    s,
+    ticket,
+    options.admissionCode,
+    operator,
+    now,
+    options.overrideReason,
+  );
+  audit(
+    s,
+    operator,
+    "check-in",
+    ticket.id,
+    `${alreadyAdmitted ? "Linked to existing person; no additional admission" : "First admission"}${options.overrideReason ? `; override: ${options.overrideReason}` : ""}`,
+    now,
+  );
   if (s.awards.some((a) => a.contest === "attendance"))
     s.awards
       .filter((a) => a.contest === "attendance")
@@ -252,9 +300,11 @@ export function scanTicket(
         a.reviewRequired = true;
       });
   return {
-    admitted: true,
+    admitted: !alreadyAdmitted,
     ticket,
-    message: "Valid ticket. Admit and issue wristband.",
+    message: alreadyAdmitted
+      ? "This wristband is already admitted. Ticket linked; do not admit again."
+      : "Valid ticket. Admit and issue the recorded wristband.",
   };
 }
 export function reverseCheckIn(
@@ -269,12 +319,45 @@ export function reverseCheckIn(
   if (!ticket) throw new Error("Ticket not found.");
   ticket.checkedInAt = null;
   ticket.checkedInBy = null;
+  ticket.admissionId = undefined;
   s.awards
     .filter((a) => a.contest === "attendance")
     .forEach((a) => {
       a.reviewRequired = true;
     });
   audit(s, operator, "check-in-reversed", ticketId, reason, now);
+}
+export function correctAdmission(
+  s: State,
+  ticketId: string,
+  code: string,
+  reason: string,
+  operator: string,
+  now: Date,
+) {
+  const ticket = s.tickets.find((t) => t.id === ticketId);
+  if (!ticket?.valid || !ticket.checkedInAt)
+    throw new Error(
+      "Only a checked-in valid ticket can be linked to an admission.",
+    );
+  if (!reason.trim()) throw new Error("A correction reason is required.");
+  const target = s.admissions.find((a) => a.code === code.trim().toUpperCase());
+  if (!target) throw new Error("Existing admission ID not found.");
+  const previous = ticket.admissionId;
+  attachAdmission(s, ticket, code, operator, new Date(ticket.checkedInAt));
+  s.awards
+    .filter((a) => a.contest === "attendance")
+    .forEach((a) => {
+      a.reviewRequired = true;
+    });
+  audit(
+    s,
+    operator,
+    "admission-linked",
+    ticket.id,
+    `${previous} -> ${target.id}: ${reason}`,
+    now,
+  );
 }
 export function addEntry(s: State, raw: unknown, operator: string, now: Date) {
   const input = entryInput.parse(raw);
@@ -376,7 +459,7 @@ export function addEntry(s: State, raw: unknown, operator: string, now: Date) {
     return source;
   });
 }
-function donationDelta(
+export function donationDelta(
   s: State,
   teamId: string,
   source: string,
@@ -384,29 +467,20 @@ function donationDelta(
   now: Date,
 ) {
   const r = rule(s, "donation");
-  const cents = s.receipts
-    .filter(
-      (x) => x.teamId === teamId && x.category === "donation" && !x.reversedAt,
-    )
-    .reduce((sum, x) => sum + x.cents, 0);
   const prior = s.ledger
     .filter((x) => x.teamId === teamId && x.rule === "donation")
     .reduce((sum, x) => sum + x.points, 0);
-  // Preserve points already awarded under earlier rule versions. New complete $5
-  // units use the current rule; receipt reversal recomputes using receipt snapshots.
+  // Round each receipt independently. Small gifts never pool into point units.
   const eligible = s.receipts
     .filter(
       (x) => x.teamId === teamId && x.category === "donation" && !x.reversedAt,
     )
     .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
-  let remainder = 0;
   let desired = 0;
   for (const receipt of eligible) {
-    remainder += receipt.cents;
     const rate = receipt.donationRate ?? r.points;
-    const units = Math.floor(remainder / 500);
+    const units = Math.floor(receipt.cents / 500);
     desired += units * rate;
-    remainder %= 500;
   }
   ledger(
     s,
@@ -417,10 +491,13 @@ function donationDelta(
       source,
       rule: r.id,
       ruleRevision: r.revision,
-      quantity: Math.floor(cents / 500),
+      quantity: eligible.reduce(
+        (n, receipt) => n + Math.floor(receipt.cents / 500),
+        0,
+      ),
       day: eventDay(now),
       operator,
-      reason: "Net verified donations, complete $5 units",
+      reason: "Verified donations, complete $5 units per donation",
     },
     now,
   );
@@ -432,6 +509,10 @@ export function addDonation(
   now: Date,
 ) {
   const input = donationInput.parse(raw);
+  if (/\b(?:cs_|pi_|ch_|re_)[A-Za-z0-9_]+/.test(input.reference))
+    throw new Error(
+      "Stripe donations are imported automatically. Reconcile the Stripe payment instead of entering it manually.",
+    );
   team(s, input.teamId);
   validateBrother(s, input.donorBrotherId);
   return operation(s, input.requestKey, input, now, () => {
@@ -454,6 +535,8 @@ export function addDonation(
       operator,
       createdAt: iso(now),
       donationRate: rule(s, "donation").points,
+      donationPolicy: 2,
+      reference: input.reference,
       sequence: s.receipts.length,
     });
     audit(
@@ -487,6 +570,10 @@ export function reverseEntry(
     const receipt = s.receipts.find(
       (r) => r.id === input.id || r.source === entry?.source,
     );
+    if (receipt?.providerSessionId)
+      throw new Error(
+        "Stripe donations must be corrected through Stripe reconciliation.",
+      );
     if (entry && ["tickets", "bonuses", "eating"].includes(entry.category))
       throw new Error("Use the ticket or contest correction controls.");
     if (
@@ -564,9 +651,9 @@ export function award(s: State, raw: unknown, operator: string, now: Date) {
   }
   const candidates = contestTotals(s);
   const measure = input.contest.startsWith("food:")
-    ? "mondayPackages"
+    ? "mondayPoints"
     : input.contest.startsWith("participation:")
-      ? "tuesdayCents"
+      ? "tuesdayPoints"
       : input.contest === "hanging"
         ? "hangMillis"
         : null;
@@ -579,7 +666,7 @@ export function award(s: State, raw: unknown, operator: string, now: Date) {
         candidates.find((t) => t.teamId === input.teamId)?.[measure] !== max)
     )
       throw new Error(
-        `Choose a team tied for the highest ${measure === "mondayPackages" ? "accepted box package count" : measure === "tuesdayCents" ? "verified pie/slap revenue" : "hang time"}.`,
+        `Choose a team tied for the highest ${measure === "mondayPoints" ? "supply points" : measure === "tuesdayPoints" ? "pie/slap points" : "hang time"}.`,
       );
   }
   return operation(s, input.requestKey, input, now, () => {
@@ -877,6 +964,7 @@ export function requireRole(
     throw new Error("Your staff role cannot perform this action.");
 }
 export function standings(s: State) {
+  const admissions = activeAdmissions(s);
   const teams = s.teams
     .map((t) => {
       const entries = s.ledger.filter((e) => e.teamId === t.id);
@@ -892,9 +980,7 @@ export function standings(s: State) {
         eatingCompetitionPoints: sum("eating"),
         bonusPoints: sum("bonuses"),
         totalPoints: entries.reduce((sum, e) => sum + e.points, 0),
-        attendance: s.tickets.filter(
-          (x) => x.teamId === t.id && x.valid && x.checkedInAt,
-        ).length,
+        attendance: admissions.filter((a) => a.teamId === t.id).length,
         lastUpdated:
           entries
             .map((e) => e.createdAt)
@@ -929,7 +1015,7 @@ export function standings(s: State) {
   return {
     teams,
     fundsRaisedCents,
-    attendance: s.tickets.filter((t) => t.valid && t.checkedInAt).length,
+    attendance: admissions.length,
     lastUpdated:
       s.audit
         .map((x) => x.createdAt)
@@ -1003,6 +1089,8 @@ export function transferTicket(
       now,
     );
   ticket.teamId = teamId;
+  const admission = s.admissions.find((a) => a.id === ticket.admissionId);
+  if (admission) admission.teamId = teamId;
   s.awards
     .filter((a) => a.contest === "attendance")
     .forEach((a) => {

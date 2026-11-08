@@ -14,6 +14,8 @@ import {
   currentPaymentLinkTotals,
   currentPaymentLinkUrl,
 } from "@/lib/payments/paymentLink";
+import { ArrowUpRight } from "lucide-react";
+import { donationUrl } from "@/lib/payments/donationLink";
 import { causeCopy, eventConfig, ticketTiers } from "@/lib/eventConfig";
 import styles from "./modern.module.css";
 
@@ -92,6 +94,26 @@ export default function Home() {
               Food is available while supplies last. Door tickets are cash only.
             </p>
           </div>
+          <aside
+            className="donate-panel"
+            id="give"
+            aria-labelledby="donate-heading"
+          >
+            <div>
+              <p className="eyebrow">Chapter points</p>
+              <h3 id="donate-heading">Make a donation.</h3>
+              <p>$5 earns 50 points. $10 earns 100.</p>
+              <p className="donate-note">
+                Select a chapter at checkout. $5 minimum for points.
+              </p>
+            </div>
+            <div className="donate-action">
+              <a className="button donate-button" href={donationUrl}>
+                Donate <ArrowUpRight size={18} aria-hidden="true" />
+              </a>
+              <p>Donation only. Does not include admission.</p>
+            </div>
+          </aside>
         </div>
       </section>
       <section
@@ -177,6 +199,9 @@ export default function Home() {
             <p className="eyebrow">Kappa Sigma Theta-Omega</p>
             <h2 id="cause-heading">Supporting Movember.</h2>
             <p>{causeCopy}</p>
+            <a className="button donate-button cause-donate" href={donationUrl}>
+              Donate <ArrowUpRight size={18} aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>

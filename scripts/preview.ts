@@ -3,7 +3,12 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { randomBytes, randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
+import {
+  createServer as createHttpsServer,
+  type Server as HttpsServer,
+} from "node:https";
+import { request as proxyRequest } from "node:http";
 import {
   currentPaymentLinkId,
   currentPaymentLinkPriceIds,
@@ -18,6 +23,7 @@ import { unseal } from "../src/lib/operations/crypto";
 import { correctSeller, saveBrother } from "../src/lib/operations/brothers";
 async function main() {
   const e2e = process.argv.includes("--e2e");
+  const production = process.argv.includes("--production");
   const fresh = process.argv.includes("--fresh");
   const port = e2e ? 54387 : 54386;
   const appPort = e2e ? 3101 : 3100;
@@ -37,7 +43,7 @@ async function main() {
   }
   process.env.TICKET_ENCRYPTION_KEY = key;
   process.env.OPS_ALLOW_TEST_FIXTURES = "true";
-  process.env.APP_URL = `http://127.0.0.1:${appPort}`;
+  process.env.APP_URL = `${production ? "https" : "http"}://127.0.0.1:${appPort}`;
   const pg = new EmbeddedPostgres({
     databaseDir: directory,
     port,
@@ -163,7 +169,7 @@ async function main() {
   const env = {
     ...process.env,
     EVENT_PREVIEW: "true",
-    NEXT_DIST_DIR: e2e ? ".next-e2e" : ".next-preview",
+    NEXT_DIST_DIR: production ? ".next" : e2e ? ".next-e2e" : ".next-preview",
     DATABASE_URL: "",
     OPERATIONS_DATABASE_URL: databaseUrl,
     EVENT_OPERATIONS_ENABLED: "true",
@@ -193,16 +199,72 @@ async function main() {
   };
   // Every service URL is explicitly local. Existing .env.local is never used for operations.
   // Stable preview refreshes; Turbopack can repeatedly reload cached browser fixtures.
+  // Exercise real production HTTPS and Secure cookies through a loopback-only proxy.
+  // Ephemeral certificates stay in this isolated Postgres fixture directory.
+  let httpsProxy: HttpsServer | undefined;
+  if (production) {
+    const keyFile = join(directory, "loopback.key");
+    const certificateFile = join(directory, "loopback.crt");
+    execFileSync(
+      "openssl",
+      [
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:2048",
+        "-nodes",
+        "-keyout",
+        keyFile,
+        "-out",
+        certificateFile,
+        "-days",
+        "1",
+        "-subj",
+        "/CN=127.0.0.1",
+      ],
+      { stdio: "ignore" },
+    );
+    httpsProxy = createHttpsServer(
+      { key: await readFile(keyFile), cert: await readFile(certificateFile) },
+      (request, response) => {
+        const upstream = proxyRequest(
+          {
+            hostname: "127.0.0.1",
+            port: appPort + 100,
+            path: request.url,
+            method: request.method,
+            headers: {
+              ...request.headers,
+              "x-forwarded-proto": "https",
+              "x-forwarded-host": request.headers.host,
+            },
+          },
+          (result) => {
+            response.writeHead(result.statusCode ?? 502, result.headers);
+            result.pipe(response);
+          },
+        );
+        upstream.on("error", () => {
+          response.writeHead(502);
+          response.end("Preview starting");
+        });
+        request.pipe(upstream);
+      },
+    );
+    await new Promise<void>((resolve, reject) => {
+      httpsProxy!.once("error", reject);
+      httpsProxy!.listen(appPort, "127.0.0.1", resolve);
+    });
+  }
   const child = spawn(
     process.execPath,
     [
       "node_modules/next/dist/bin/next",
-      "dev",
-      "--webpack",
+      ...(production ? ["start"] : ["dev", "--webpack"]),
       "--hostname",
       "127.0.0.1",
       "--port",
-      String(appPort),
+      String(production ? appPort + 100 : appPort),
     ],
     { stdio: "inherit", env },
   );
@@ -210,6 +272,8 @@ async function main() {
   function stop() {
     return (stopPromise ??= (async () => {
       child.kill("SIGTERM");
+      httpsProxy?.closeAllConnections();
+      httpsProxy?.close();
       await pg.stop();
     })());
   }

@@ -1,5 +1,8 @@
 # Packet rules implementation and verification
 
+**Superseded scoring definitions (November 8):** [Scoring and donation release](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) records Monday supply points, Tuesday pie/slap points, Wednesday longest hang, Thursday unique attendees, and per-donation $5 point units. Earlier package-count, pie/slap-revenue, and pooled-donation descriptions below are historical.
+
+
 **November 4 package approval:** the organizer supplied [Great Value Steak Fajitas with Fire Roasted Vegetables, 18 oz](https://www.walmart.com/ip/5195803576). The complete bag is now an accepted steak package at the existing 175 Monday / 100 ordinary points, with no cap. Historical references to pending steak details below are superseded by this approval.
 
 November 1, 2026. Implemented locally on `feat/event-operations`. The packet and subsequent organizer clarifications are authoritative. This section records the local rules verification run. Subsequent approved database preparation and November 3 Vercel configuration are recorded in `DEPLOYMENT_SETUP_STATUS.md`; November 3 payment changes passed 71 tests in `PAYMENT_LINK_VERIFICATION.md`. No new code deployment, real payment, external email or historical import occurred.

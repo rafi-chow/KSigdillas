@@ -84,12 +84,12 @@ export const defaultRules: Rule[] = [
     { id: "award:hanging", label: "Overall hanging winner", points: 300 },
     {
       id: "award:food:2026-11-16",
-      label: "Monday supply box winner",
+      label: "Monday supply points winner",
       points: 500,
     },
     {
       id: "award:participation:2026-11-17",
-      label: "Tuesday pie/slap revenue winner",
+      label: "Tuesday pie/slap points winner",
       points: 300,
     },
     { id: "award:volleyball:1", label: "Volleyball first", points: 400 },
@@ -109,7 +109,7 @@ export const defaultRules: Rule[] = [
   })),
   {
     id: "donation",
-    label: "Donation · points per $5",
+    label: "Donation · $5 minimum for points",
     points: 50,
     cents: 500,
     enabled: true,
@@ -146,6 +146,7 @@ export function initialState(state: State) {
       revision: 1,
       offlineSalesEnabled: false,
       packetVersion: 1,
+      scoringPolicyVersion: 2,
       updatedAt: new Date().toISOString(),
     },
   ];

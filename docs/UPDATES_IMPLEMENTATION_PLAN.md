@@ -1,5 +1,8 @@
 # KSigdillas full implementation and launch plan
 
+**Superseded scoring definitions (November 8):** [Scoring and donation release](SCORING_AND_DONATIONS_RELEASE_2026-11-08.md) records Monday supply points, Tuesday pie/slap points, Wednesday longest hang, Thursday unique attendees, and per-donation $5 point units. Earlier package-count, pie/slap-revenue, and pooled-donation descriptions below are historical.
+
+
 **November 1 authority update:** the user designated the [KSigdillas Packet](https://docs.google.com/document/d/18AXJPC4zIaVk6ucLsNTPeLRO6whajf8KZW4G0Efjvnw/edit) as authoritative. `PRODUCTION_READINESS_PLAN.md` is the current finishing/release plan and overrides older conflicting implementation details below. The later “implement and test” instruction authorized packet alignment. Code is implemented locally; 67 automated tests, 20 browser cases and typecheck/lint/build pass. See `PACKET_VERIFICATION.md` for current evidence and remaining production gates. The tests reported below are October 29 evidence, not verification of the new rules.
 
 Updated October 29, 2026. The user authorized implementation. Event operations, Stripe Checkout integration code, buyer-fee configuration, brother sales/donor tracking, Brevo/Resend delivery and recovery are implemented locally. Current results: 56 domain/integration tests and 16 browser cases passed, plus typecheck/lint/build. See `STRIPE_BROTHER_VERIFICATION.md` and `STRIPE_EMAIL_SETUP.md`. Real account/fee approval, sender, scheduler, phones and production cutover remain pending. No real account settings, production data or deployment were changed. The companion plans retain the detailed design and acceptance requirements.

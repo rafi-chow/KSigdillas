@@ -62,6 +62,13 @@ export class PgStore implements Store {
           "utf8",
         ),
       );
+      await this.query(
+        client,
+        await readFile(
+          resolve(process.cwd(), "migrations/004_scoring_and_donations.sql"),
+          "utf8",
+        ),
+      );
       await this.query(client, "COMMIT");
     } catch (e) {
       await client.query("ROLLBACK");
@@ -127,6 +134,10 @@ export class PgStore implements Store {
           UNION ALL
           SELECT 1 FROM event_ops_checkouts WHERE
             payload->>'sessionId' IS NOT NULL AND payload->>'nextCheckAt' <= $1
+            AND (payload->>'leaseUntil' IS NULL OR payload->>'leaseUntil' <= $1)
+          UNION ALL
+          SELECT 1 FROM event_ops_donations WHERE
+            payload->>'nextCheckAt' <= $1
             AND (payload->>'leaseUntil' IS NULL OR payload->>'leaseUntil' <= $1)
           UNION ALL
           SELECT 1 FROM event_ops_refunds WHERE

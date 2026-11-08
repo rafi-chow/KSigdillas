@@ -20,6 +20,7 @@ import type {
   TeamRecord,
   RemoteRefund,
   RecordedEntry,
+  StripeDonation,
 } from "@/lib/operations/model";
 import { donationProducts, eventConfig } from "@/lib/eventConfig";
 import { KappaSigmaMark } from "./KappaSigmaMark";
@@ -30,6 +31,7 @@ import { StripeRefundForm } from "./StripeRefundForm";
 type Tab = "scores" | "scan" | "orders" | "settings" | "history" | "brothers";
 type Desk = {
   user: { id: string; name: string; role: Role };
+  admissionWindowOpen: boolean;
   teams: (TeamRecord & { totalPoints: number; attendance: number })[];
   rules: Rule[];
   awards: Award[];
@@ -37,6 +39,8 @@ type Desk = {
     teamId: string;
     name: string;
     mondayPackages: number;
+    mondayPoints: number;
+    tuesdayPoints: number;
     tuesdayCents: number;
     hangMillis: number;
     caps: Record<string, number>;
@@ -50,6 +54,7 @@ type Desk = {
   entries: RecordedEntry[];
   integrations?: {
     refundWriteEnabled?: boolean;
+    donations: StripeDonation[];
     pendingEvents: {
       id: string;
       type: string;
@@ -85,6 +90,7 @@ type FoundOrder = {
     teamId: string | null;
     valid: boolean;
     checkedInAt: string | null;
+    admissionCode?: string;
     refunded: boolean;
     baseCents?: number;
   }[];
@@ -123,6 +129,18 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
   const [orders, setOrders] = useState<FoundOrder[]>([]);
   const [query, setQuery] = useState("");
   const [scanInput, setScanInput] = useState("");
+  const [admissionCode, setAdmissionCode] = useState("");
+  const [rehearsal, setRehearsal] = useState<boolean | null>(null);
+  const [overrideReason, setOverrideReason] = useState("");
+  const rehearsalMode = rehearsal ?? !desk?.admissionWindowOpen;
+  const scanOptions = {
+    admissionCode: admissionCode.trim() || undefined,
+    rehearsal: rehearsalMode,
+    overrideReason:
+      !rehearsalMode && overrideReason.trim()
+        ? overrideReason.trim()
+        : undefined,
+  };
   const [camera, setCamera] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const scanner = useRef<QrScanner | null>(null);
@@ -167,13 +185,17 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
         message?: string;
         orderUrl?: string;
         admitted?: boolean;
+        rehearsal?: boolean;
         ticket?: { name: string; tier: string; teamId: string | null };
       }>(path, { ...input, ...(withKey ? { requestKey: key } : {}) });
       requestKeys.current.delete(identity);
       const text = result.ticket
         ? `${result.message} ${result.ticket.name} · ${result.ticket.tier === "basic" ? "Basicdilla" : "Meat/Veggie Pass"} · ${result.ticket.teamId?.toUpperCase() ?? "No team"}`
         : message;
-      setNotice({ error: result.admitted === false, text });
+      setNotice({
+        error: result.admitted === false && !result.rehearsal,
+        text,
+      });
       await refresh();
       return result;
     } catch (error) {
@@ -192,7 +214,13 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
     scanner.current?.stop();
     setCamera(false);
     try {
-      await run("scan", { token: value }, "", false);
+      const result = await run(
+        "scan",
+        { token: value, ...scanOptions },
+        "",
+        false,
+      );
+      if (result?.admitted) setAdmissionCode("");
     } finally {
       scanning.current = false;
     }
@@ -406,12 +434,61 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
           disabled={busy}
           style={{ border: 0, padding: 0, minWidth: 0 }}
         >
+          {(tab === "scan" || tab === "orders") && (
+            <section className="ops-card admission-controls">
+              <h2>Admission settings</h2>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={rehearsalMode}
+                  onChange={(e) => setRehearsal(e.target.checked)}
+                />
+                Rehearsal mode — verify QR without admitting anyone
+              </label>
+              {!desk.admissionWindowOpen && (
+                <p>
+                  Event check-in opens November 19 at 6 PM Central. Rehearsal
+                  does not use the ticket or add attendance.
+                </p>
+              )}
+              {!rehearsalMode && (
+                <>
+                  <label>
+                    Wristband / admission ID
+                    <input
+                      value={admissionCode}
+                      onChange={(e) => setAdmissionCode(e.target.value)}
+                      maxLength={40}
+                      autoComplete="off"
+                      placeholder="For example, W001"
+                    />
+                  </label>
+                  <p>
+                    One person, one wristband. Check for an existing wristband
+                    before admitting. Entering an existing ID links the ticket
+                    to that person without counting them again.
+                  </p>
+                  {!desk.admissionWindowOpen &&
+                    desk.user.role === "organizer" && (
+                      <label>
+                        Event-hours override reason
+                        <input
+                          value={overrideReason}
+                          onChange={(e) => setOverrideReason(e.target.value)}
+                          maxLength={300}
+                        />
+                      </label>
+                    )}
+                </>
+              )}
+            </section>
+          )}
           {tab === "scan" && (
             <section className="ops-card">
               <h2>CHECK IN A TICKET</h2>
               <p>
-                A successful scan admits one person. Check the tier before
-                issuing their wristband.
+                Verify the ticket tier, record the wristband ID above, then
+                scan. Each person counts once.
               </p>
               <video
                 className="ops-camera"
@@ -490,35 +567,35 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
               <section className="ops-card">
                 <h2>DAILY WINNER TOTALS</h2>
                 <p>
-                  Monday: reconcile each sorority box with accepted whole
-                  packages. Tuesday: verified pie/slap money only, excluding
-                  donations and ticket sales.
+                  Monday uses supply points. Tuesday uses pie/slap points.
+                  Wednesday keeps longest hang. Thursday counts unique
+                  attendees.
                 </p>
-                <div className="ops-table-wrap">
-                  <table className="ops-table">
-                    <thead>
-                      <tr>
-                        <th>Chapter box</th>
-                        <th>Monday packages</th>
-                        <th>Tuesday pie/slap</th>
-                        <th>Longest hang</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {desk.contests.map((t) => (
-                        <tr key={t.teamId}>
-                          <td>{t.name}</td>
-                          <td>{t.mondayPackages}</td>
-                          <td>{dollars(t.tuesdayCents)}</td>
-                          <td>
-                            {t.hangMillis
-                              ? `${t.hangMillis / 1000}s`
-                              : "No timed entry"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="contest-cards">
+                  {desk.contests.map((t) => (
+                    <article className="contest-card" key={t.teamId}>
+                      <h3>{t.name}</h3>
+                      <dl>
+                        <dt>Monday supply points</dt>
+                        <dd>{t.mondayPoints.toLocaleString()}</dd>
+                        <dt>Accepted packages</dt>
+                        <dd>{t.mondayPackages.toLocaleString()}</dd>
+                        <dt>Tuesday pie/slap points</dt>
+                        <dd>{t.tuesdayPoints.toLocaleString()}</dd>
+                        <dt>Longest hang</dt>
+                        <dd>
+                          {t.hangMillis
+                            ? `${t.hangMillis / 1000}s`
+                            : "No timed entry"}
+                        </dd>
+                        <dt>Thursday attendees</dt>
+                        <dd>
+                          {desk.teams.find((team) => team.id === t.teamId)
+                            ?.attendance ?? 0}
+                        </dd>
+                      </dl>
+                    </article>
+                  ))}
                 </div>
               </section>
               <div className="ops-grid">
@@ -932,20 +1009,51 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
                         </strong>
                         <small>
                           {t.id} · {t.valid ? "Valid" : "Not valid"}
-                          {t.checkedInAt ? " · already checked in" : ""}
+                          {t.checkedInAt
+                            ? ` · already checked in · ${t.admissionCode ?? "ID pending"}`
+                            : ""}
                         </small>
                         <button
                           className="ops-action"
                           type="button"
                           disabled={!t.valid || !!t.checkedInAt}
                           onClick={() =>
-                            void run("lookup-scan", { id: t.id }, "", false)
+                            void run(
+                              "lookup-scan",
+                              { id: t.id, ...scanOptions },
+                              "",
+                              false,
+                            )
                           }
                         >
                           Check in this guest
                         </button>
                         {desk.user.role === "organizer" && (
                           <>
+                            {t.checkedInAt && (
+                              <button
+                                className="ops-action"
+                                type="button"
+                                onClick={() => {
+                                  const code = prompt(
+                                    "Existing wristband / admission ID for this person?",
+                                  );
+                                  if (!code) return;
+                                  const reason = prompt(
+                                    "Reason for linking these tickets to one person?",
+                                  );
+                                  if (reason)
+                                    void run(
+                                      "link-admission",
+                                      { id: t.id, admissionCode: code, reason },
+                                      "Admission linked; search again to refresh.",
+                                      false,
+                                    );
+                                }}
+                              >
+                                Link duplicate attendee
+                              </button>
+                            )}
                             {t.checkedInAt && (
                               <button
                                 className="ops-action"

@@ -6,6 +6,15 @@ import { z } from "zod";
 import { PgStore } from "../src/lib/operations/store";
 import { collections, type State } from "../src/lib/operations/model";
 import { packetPreview, applyPacket } from "../src/lib/operations/packet";
+import {
+  applyScoringPolicy,
+  scoringPolicyPreview,
+} from "../src/lib/operations/scoringPolicy";
+import {
+  donationLinkId,
+  donationUrl,
+  reconcileDonation,
+} from "../src/lib/payments/donations";
 import { importLegacyTickets } from "../src/lib/operations/legacy";
 import { addStaff, audit, standings } from "../src/lib/operations/service";
 import {
@@ -33,6 +42,60 @@ async function main() {
     if (command === "migrate") {
       await store.migrate();
       console.log("Operations migration applied. Legacy data was not changed.");
+    } else if (command === "check-scoring-policy") {
+      console.log(JSON.stringify(scoringPolicyPreview(await store.read())));
+    } else if (command === "apply-scoring-policy") {
+      if (!filename)
+        throw new Error(
+          "Provide a reviewed scoring-policy manifest with fingerprint and reason.",
+        );
+      const input = z
+        .object({
+          fingerprint: z.string(),
+          reason: z.string().trim().min(1).max(300),
+        })
+        .strict()
+        .parse(JSON.parse(await readFile(resolve(filename), "utf8")));
+      await store.transaction((s) =>
+        applyScoringPolicy(
+          s,
+          input.fingerprint,
+          input.reason,
+          "scoring-policy-cli",
+          new Date(),
+        ),
+      );
+      console.log("Scoring policy v2 applied with audit history retained.");
+    } else if (
+      command === "check-donations" ||
+      command === "import-donations"
+    ) {
+      const stripe = stripeClient();
+      const link = await stripe.paymentLinks.retrieve(donationLinkId);
+      if (
+        link.url !== donationUrl ||
+        link.livemode !== checkoutConfig().livemode
+      )
+        throw new Error(
+          "Donation link does not match the reviewed account/environment.",
+        );
+      let paid = 0,
+        imported = 0;
+      for await (const session of stripe.checkout.sessions.list({
+        payment_link: donationLinkId,
+        status: "complete",
+        limit: 100,
+      })) {
+        if (session.payment_status !== "paid") continue;
+        paid++;
+        if (command === "import-donations") {
+          await reconcileDonation(store, session.id, stripeGateway());
+          imported++;
+        }
+      }
+      console.log(
+        JSON.stringify({ mode: command, paid, reconciled: imported }),
+      );
     } else if (command === "check-packet-rules") {
       if (!filename)
         throw new Error(
@@ -84,14 +147,28 @@ async function main() {
     } else if (command === "stripe-check") {
       const config = checkoutConfig();
       const stripe = stripeClient();
-      const account = config.secret.startsWith("rk_") ? null : await retrieveOwnStripeAccount(stripe);
+      const account = config.secret.startsWith("rk_")
+        ? null
+        : await retrieveOwnStripeAccount(stripe);
       if (account && account.id !== config.accountId)
         throw new Error("Configured Stripe account does not match API key.");
       const expected = [
-        { id: config.prices.basic, cents: config.pricingMode === "all_in" ? 1061 : 1000 },
-        { id: config.prices.meat, cents: config.pricingMode === "all_in" ? 1576 : 1500 },
-        { id: config.prices.basicDoor, cents: config.pricingMode === "all_in" ? 1267 : 1200 },
-        { id: config.prices.meatDoor, cents: config.pricingMode === "all_in" ? 1885 : 1800 },
+        {
+          id: config.prices.basic,
+          cents: config.pricingMode === "all_in" ? 1061 : 1000,
+        },
+        {
+          id: config.prices.meat,
+          cents: config.pricingMode === "all_in" ? 1576 : 1500,
+        },
+        {
+          id: config.prices.basicDoor,
+          cents: config.pricingMode === "all_in" ? 1267 : 1200,
+        },
+        {
+          id: config.prices.meatDoor,
+          cents: config.pricingMode === "all_in" ? 1885 : 1800,
+        },
         ...paymentLinkPrices().map((p) => ({ id: p.id, cents: p.paidCents })),
       ];
       for (const p of expected.filter((p) => p.id)) {
@@ -119,7 +196,8 @@ async function main() {
       console.log(
         JSON.stringify({
           catalogVerified: true,
-          chargesEnabled: account?.charges_enabled ?? "not requested with restricted key",
+          chargesEnabled:
+            account?.charges_enabled ?? "not requested with restricted key",
           payoutsEnabled: account?.payouts_enabled ?? "owner-controlled",
           matchingPaymentLinks: matchingLinks,
           feePolicyApproved: process.env.STRIPE_FEE_POLICY_APPROVED === "true",
@@ -132,7 +210,9 @@ async function main() {
       const config = checkoutConfig();
       const stripe = stripeClient();
       const gateway = stripeGateway();
-      const account = config.secret.startsWith("rk_") ? null : await retrieveOwnStripeAccount(stripe);
+      const account = config.secret.startsWith("rk_")
+        ? null
+        : await retrieveOwnStripeAccount(stripe);
       if (account && account.id !== config.accountId)
         throw new Error("Configured Stripe account does not match API key.");
       const linkId = process.env.STRIPE_PAYMENT_LINK_ID;
@@ -219,23 +299,29 @@ async function main() {
           (key) =>
             !Array.isArray(backup.state[key]) &&
             !(
-              backup.version === 1 &&
-              [
-                "brothers",
-                "entries",
-                "attributions",
-                "checkouts",
-                "providerEvents",
-                "refunds",
-                "emailEvents",
-              ].includes(key)
+              (backup.version === 1 &&
+                [
+                  "brothers",
+                  "entries",
+                  "attributions",
+                  "checkouts",
+                  "providerEvents",
+                  "refunds",
+                  "emailEvents",
+                ].includes(key)) ||
+              ["admissions", "donations"].includes(key)
             ),
         )
       )
         throw new Error("Invalid operations backup.");
       const deletionPath = process.env.PRIVACY_DELETION_MANIFEST;
-      if (!deletionPath) throw new Error("Restore requires PRIVACY_DELETION_MANIFEST; use a reviewed empty list if no deletions have occurred.");
-      const deletionIds = z.array(z.string().uuid()).parse(JSON.parse(await readFile(resolve(deletionPath), "utf8")));
+      if (!deletionPath)
+        throw new Error(
+          "Restore requires PRIVACY_DELETION_MANIFEST; use a reviewed empty list if no deletions have occurred.",
+        );
+      const deletionIds = z
+        .array(z.string().uuid())
+        .parse(JSON.parse(await readFile(resolve(deletionPath), "utf8")));
       await store.transaction((s) => {
         if (
           s.orders.length ||

@@ -43,6 +43,9 @@ export type Receipt = {
   createdAt: string;
   reversedAt?: string;
   donationRate?: number;
+  donationPolicy?: number;
+  reference?: string;
+  providerSessionId?: string;
   sequence?: number;
 };
 export type Order = {
@@ -95,6 +98,8 @@ export type EventTicket = {
   valid: boolean;
   checkedInAt: string | null;
   checkedInBy: string | null;
+  admissionId?: string;
+  rehearsalAt?: string;
   refunded: boolean;
   createdAt: string;
 };
@@ -162,6 +167,7 @@ export type Settings = {
   offlineSalesEnabled: boolean;
   updatedAt: string;
   packetVersion?: number;
+  scoringPolicyVersion?: number;
   chapterRepresentatives?: { teamId: string; name: string; contact: string }[];
 };
 export type Brother = {
@@ -190,6 +196,7 @@ export type RecordedEntry = {
 export type Attribution = {
   id: string;
   kind: "receipt" | "entry";
+  basisUnits?: number;
   allocations: { brotherId: string; units: number }[];
   revision: number;
 };
@@ -253,6 +260,37 @@ export type EmailEvent = {
   occurredAt: string;
   processed: boolean;
 };
+export type Admission = {
+  id: string;
+  code: string;
+  teamId: string | null;
+  checkedInAt: string;
+  operator: string;
+  overrideReason?: string;
+};
+export type StripeDonation = {
+  id: string;
+  paymentLinkId: string;
+  paymentId: string;
+  chargeId?: string;
+  accountId: string;
+  livemode: boolean;
+  receiptId: string;
+  teamId: string | null;
+  amountCents: number;
+  refundedCents: number;
+  processorFeeCents?: number;
+  receiptUrl?: string;
+  status: "paid" | "partially-refunded" | "refunded" | "disputed";
+  referrerBrotherId: string | null;
+  referrerRaw: string;
+  review: string[];
+  revision: number;
+  createdAt: string;
+  nextCheckAt: string;
+  leaseUntil?: string;
+  error?: string;
+};
 export type State = {
   teams: TeamRecord[];
   rules: Rule[];
@@ -275,6 +313,8 @@ export type State = {
   providerEvents: ProviderEvent[];
   refunds: RemoteRefund[];
   emailEvents: EmailEvent[];
+  admissions: Admission[];
+  donations: StripeDonation[];
 };
 export const collections = [
   "teams",
@@ -298,6 +338,8 @@ export const collections = [
   "providerEvents",
   "refunds",
   "emailEvents",
+  "admissions",
+  "donations",
 ] as const satisfies readonly (keyof State)[];
 export function emptyState(): State {
   return Object.fromEntries(
