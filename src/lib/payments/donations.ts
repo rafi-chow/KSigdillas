@@ -120,7 +120,7 @@ export function importDonation(
     operator: "stripe",
     createdAt: row.createdAt,
     donationRate: donationRule.points,
-    donationPolicy: 2,
+    donationPolicy: 3,
     providerSessionId: session.id,
     reference: session.id,
   });

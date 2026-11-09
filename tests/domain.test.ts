@@ -244,7 +244,7 @@ test("slap/pie require verified payment, replay cannot repeat receipts or points
   assert.equal(standings(s).fundsRaisedCents, 600);
   assert.equal(s.receipts.length, 2);
 });
-test("$7+$3 donations earn 50; reversing $3 leaves $7 and 50", () => {
+test("$7+$3 donations earn 70; reversing $3 leaves $7 and 70", () => {
   const s = state();
   const first = {
     requestKey: randomUUID(),
@@ -253,14 +253,14 @@ test("$7+$3 donations earn 50; reversing $3 leaves $7 and 50", () => {
     reference: "Receipt A",
   };
   addDonation(s, first, "test", monday);
-  assert.equal(standings(s).teams[0].totalPoints, 50);
+  assert.equal(standings(s).teams[0].totalPoints, 70);
   const receiptId = addDonation(
     s,
     { ...first, requestKey: randomUUID(), cents: 300, reference: "Receipt B" },
     "test",
     monday,
   );
-  assert.equal(standings(s).teams[0].totalPoints, 50);
+  assert.equal(standings(s).teams[0].totalPoints, 70);
   assert.equal(standings(s).fundsRaisedCents, 1e3);
   reverseEntry(
     s,
@@ -268,7 +268,7 @@ test("$7+$3 donations earn 50; reversing $3 leaves $7 and 50", () => {
     "test",
     monday,
   );
-  assert.equal(standings(s).teams[0].totalPoints, 50);
+  assert.equal(standings(s).teams[0].totalPoints, 70);
   assert.equal(standings(s).fundsRaisedCents, 700);
 });
 test("rule edits are prospective, versioned, reject stale revisions and allow specified steak", () => {

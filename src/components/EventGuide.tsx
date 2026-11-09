@@ -199,8 +199,8 @@ export function EventGuide() {
                 <p>
                   <strong>Monetary donations</strong>
                   <span>
-                    {rules.find((r) => r.id === "donation")?.points ?? 50}{" "}
-                    points per complete $5
+                    {(rules.find((r) => r.id === "donation")?.points ?? 50) / 5}{" "}
+                    points per dollar · $5 minimum
                   </span>
                 </p>
               </div>

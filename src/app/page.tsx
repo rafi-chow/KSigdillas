@@ -102,9 +102,9 @@ export default function Home() {
             <div>
               <p className="eyebrow">Chapter points</p>
               <h3 id="donate-heading">Make a donation.</h3>
-              <p>$5 earns 50 points. $10 earns 100.</p>
+              <p>10 points per dollar on donations of $5 or more.</p>
               <p className="donate-note">
-                Select a chapter at checkout. $5 minimum for points.
+                Select your chapter at checkout.
               </p>
             </div>
             <div className="donate-action">

@@ -9,9 +9,11 @@ const labels: Record<string, string> = {
   donation: "Donation · $5 minimum for points",
 };
 export function scoringPolicyPreview(s: State) {
+  const legacyPolicy = (s.settings[0]?.scoringPolicyVersion ?? 0) < 2;
   const snapshot = {
     settings: s.settings,
     entries: s.entries,
+    ledger: s.ledger,
     receipts: s.receipts,
     awards: s.awards,
     tickets: s.tickets.map(({ id, checkedInAt, checkedInBy, admissionId }) => ({
@@ -24,13 +26,14 @@ export function scoringPolicyPreview(s: State) {
   };
   return {
     fingerprint: digest(JSON.stringify(snapshot)),
-    alreadyApplied: s.settings[0]?.scoringPolicyVersion === 2,
+    alreadyApplied: s.settings[0]?.scoringPolicyVersion === 3,
     activeDonations: s.receipts.filter(
       (r) => r.category === "donation" && !r.reversedAt,
     ).length,
     affectedAwards: s.awards
       .filter(
         (a) =>
+          legacyPolicy &&
           !a.retiredAt &&
           [
             "attendance",
@@ -41,7 +44,10 @@ export function scoringPolicyPreview(s: State) {
       .map((a) => a.id),
     rehearsalCheckIns: s.tickets
       .filter(
-        (t) => t.checkedInAt && !admissionWindowOpen(new Date(t.checkedInAt)),
+        (t) =>
+          legacyPolicy &&
+          t.checkedInAt &&
+          !admissionWindowOpen(new Date(t.checkedInAt)),
       )
       .map((t) => t.id),
   };
@@ -53,27 +59,28 @@ export function applyScoringPolicy(
   operator: string,
   now: Date,
 ) {
-  if (s.settings[0]?.scoringPolicyVersion === 2) return;
+  if (s.settings[0]?.scoringPolicyVersion === 3) return;
   const preview = scoringPolicyPreview(s);
   if (preview.fingerprint !== fingerprint || !reason.trim())
     throw new Error(
       "Scoring policy snapshot changed or reason missing; review a fresh dry run.",
     );
+  const legacyPolicy = (s.settings[0]?.scoringPolicyVersion ?? 0) < 2;
   for (const r of s.rules)
-    if (labels[r.id]) {
+    if (legacyPolicy && labels[r.id]) {
       r.label = labels[r.id];
       r.revision++;
     }
   for (const receipt of s.receipts.filter((r) => r.category === "donation"))
-    receipt.donationPolicy = 2;
+    receipt.donationPolicy = 3;
   for (const t of s.teams.filter(
     (t) =>
       s.receipts.some((r) => r.teamId === t.id && r.category === "donation") ||
       s.ledger.some((e) => e.teamId === t.id && e.rule === "donation"),
   ))
-    donationDelta(s, t.id, `scoring-policy:2:${t.id}`, operator, now);
+    donationDelta(s, t.id, `scoring-policy:3:${t.id}`, operator, now);
   for (const ticket of s.tickets.filter(
-    (t) => t.checkedInAt && !t.admissionId,
+    (t) => legacyPolicy && t.checkedInAt && !t.admissionId,
   )) {
     const admittedAt = new Date(ticket.checkedInAt!);
     if (!admissionWindowOpen(admittedAt)) {
@@ -99,7 +106,7 @@ export function applyScoringPolicy(
   }
   for (const a of s.awards)
     if (preview.affectedAwards.includes(a.id)) a.reviewRequired = true;
-  s.settings[0].scoringPolicyVersion = 2;
+  s.settings[0].scoringPolicyVersion = 3;
   s.settings[0].revision++;
   s.settings[0].updatedAt = now.toISOString();
   audit(s, operator, "scoring-policy-applied", fingerprint, reason, now);

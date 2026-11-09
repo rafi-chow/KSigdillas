@@ -100,15 +100,17 @@ function paidGuests(store: MemoryStore, count = 3) {
   return store.state.tickets;
 }
 
-test("manual and Stripe donations round independently at every $5 boundary", async () => {
+test("manual and Stripe donations earn proportional points with a $5 minimum per gift", async () => {
   for (const [cents, points] of [
     [100, 0],
     [499, 0],
     [500, 50],
-    [700, 50],
-    [999, 50],
+    [501, 50.1],
+    [550, 55],
+    [700, 70],
+    [999, 99.9],
     [1000, 100],
-    [1200, 100],
+    [1200, 120],
     [1500, 150],
   ]) {
     const manual = new MemoryStore();
@@ -152,7 +154,7 @@ test("manual and Stripe donations round independently at every $5 boundary", asy
       );
     assert.equal(
       standings(store.state).teams[0].totalPoints,
-      amounts[0] === 300 ? 0 : 50,
+      amounts[0] === 300 ? 0 : 70,
     );
     const online = new MemoryStore();
     for (const cents of amounts) {
@@ -161,9 +163,77 @@ test("manual and Stripe donations round independently at every $5 boundary", asy
     }
     assert.equal(
       standings(online.state).teams[0].totalPoints,
-      amounts[0] === 300 ? 0 : 50,
+      amounts[0] === 300 ? 0 : 70,
     );
   }
+});
+
+test("fractional donation points remain exact across repeated credits and reversals", () => {
+  const store = new MemoryStore();
+  const receipts = Array.from({ length: 10 }, () =>
+    addDonation(
+      store.state,
+      {
+        requestKey: randomUUID(),
+        teamId: "axo",
+        cents: 501,
+        reference: randomUUID(),
+      },
+      "test",
+      now,
+    ),
+  );
+  assert.equal(standings(store.state).teams[0].donationPoints, 501);
+  for (const id of receipts.slice(0, 9))
+    reverseEntry(
+      store.state,
+      { requestKey: randomUUID(), id, reason: "Synthetic reversal" },
+      "test",
+      now,
+    );
+  assert.equal(standings(store.state).teams[0].donationPoints, 50.1);
+  assert.equal(standings(store.state).teams[0].totalPoints, 50.1);
+});
+
+test("policy 3 corrects an existing $7 gift from 50 to 70 points once", () => {
+  const store = new MemoryStore();
+  addDonation(
+    store.state,
+    {
+      requestKey: randomUUID(),
+      teamId: "axo",
+      cents: 700,
+      reference: "Existing gift",
+    },
+    "test",
+    now,
+  );
+  store.state.settings[0].scoringPolicyVersion = 2;
+  store.state.receipts[0].donationPolicy = 2;
+  store.state.ledger[0].points = 50;
+  const preview = scoringPolicyPreview(store.state);
+  assert.equal(preview.alreadyApplied, false);
+  const rules = structuredClone(store.state.rules);
+  store.state.ledger[0].points = 49;
+  assert.throws(
+    () => applyScoringPolicy(store.state, preview.fingerprint, "Stale ledger", "test", now),
+    /snapshot/,
+  );
+  store.state.ledger[0].points = 50;
+  applyScoringPolicy(
+    store.state,
+    preview.fingerprint,
+    "Organizer clarified points per dollar",
+    "test",
+    now,
+  );
+  assert.deepEqual(store.state.rules, rules);
+  assert.equal(standings(store.state).teams[0].donationPoints, 70);
+  assert.equal(standings(store.state).fundsRaisedCents, 700);
+  assert.equal(store.state.receipts[0].donationPolicy, 3);
+  const size = store.state.ledger.length;
+  applyScoringPolicy(store.state, preview.fingerprint, "Replay", "test", now);
+  assert.equal(store.state.ledger.length, size);
 });
 
 test("paid donation webhooks replay and arrive out of order without issuing tickets", async () => {
@@ -241,6 +311,9 @@ test("partial refunds cross the $5 threshold; dispute loss suspends and a win re
   await reconcileDonation(store, session.id, fake.gateway, now);
   assert.equal(standings(store.state).fundsRaisedCents, 499);
   assert.equal(standings(store.state).teams[0].donationPoints, 0);
+  fake.refunds[0].amount = 300;
+  await reconcileDonation(store, session.id, fake.gateway, now);
+  assert.equal(standings(store.state).teams[0].donationPoints, 70);
   fake.refunds[0].amount = 500;
   await reconcileDonation(store, session.id, fake.gateway, now);
   assert.equal(standings(store.state).teams[0].donationPoints, 50);
@@ -533,7 +606,7 @@ test("scoring migration rejects stale snapshots and preserves pre-event rehearsa
   assert.equal(tickets[0].valid, true);
   assert.equal(store.state.orders[0].status, "paid");
   assert.equal(standings(store.state).fundsRaisedCents, 1000);
-  assert.equal(store.state.settings[0].scoringPolicyVersion, 2);
+  assert.equal(store.state.settings[0].scoringPolicyVersion, 3);
 });
 
 test("policy migration adjusts historical pooled donation points once and flags existing daily awards", () => {

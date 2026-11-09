@@ -811,7 +811,8 @@ export function EventDesk({ initialTab = "scores" }: { initialTab?: Tab }) {
                     </label>
                     <p>
                       Only received money. Tickets and paid activities are
-                      recorded separately. Points accumulate per complete $5.
+                      recorded separately. Donations of $5 or more earn 10
+                      points per dollar.
                     </p>
                     <button className="button button-dark">
                       Record verified donation

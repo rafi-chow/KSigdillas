@@ -1,5 +1,9 @@
 # Netlify credit budget — updated November 8, 2026
 
+## November 8 donation-rate correction
+
+One coordinated publish corrects the donation wording and scoring to 10 points per dollar with a $5 minimum per gift. Reserve 15 additional credits beyond the hero follow-up: approximately **239.1 used / 60.9 remaining** before subsequent runtime and traffic. This is an estimate from the last observed ledger, not a refreshed balance. No paid upgrade or credit purchase is involved. The 30% internal reserve is not met; avoid optional publication and continue monitoring actual team consumption.
+
 ## November 8 hero Donate follow-up
 
 The signed-in ledger now reflects 13 publishes and **209.1 credits used / 90.9 remaining**. The requested hero Donate update needs one publication, so reserve another 15: approximately **224.1 used / 75.9 remaining** before further traffic and compute. This stays on the existing Free plan with no purchase or upgrade. The earlier same-assumption event envelope of 239.22 becomes approximately 254.22 after this extra publish; actual traffic/runtime must still be monitored and the internal 30% reserve is not established.

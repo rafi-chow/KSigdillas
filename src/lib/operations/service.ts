@@ -32,6 +32,7 @@ import {
 
 const id = () => randomUUID();
 const iso = (now: Date) => now.toISOString();
+const precisePoints = (points: number) => Math.round(points * 1000) / 1000;
 export function audit(
   s: State,
   operator: string,
@@ -467,10 +468,12 @@ export function donationDelta(
   now: Date,
 ) {
   const r = rule(s, "donation");
-  const prior = s.ledger
-    .filter((x) => x.teamId === teamId && x.rule === "donation")
-    .reduce((sum, x) => sum + x.points, 0);
-  // Round each receipt independently. Small gifts never pool into point units.
+  const prior = precisePoints(
+    s.ledger
+      .filter((x) => x.teamId === teamId && x.rule === "donation")
+      .reduce((sum, x) => sum + x.points, 0),
+  );
+  // Apply the minimum to each gift. Existing rate snapshots are points per $5.
   const eligible = s.receipts
     .filter(
       (x) => x.teamId === teamId && x.category === "donation" && !x.reversedAt,
@@ -479,25 +482,25 @@ export function donationDelta(
   let desired = 0;
   for (const receipt of eligible) {
     const rate = receipt.donationRate ?? r.points;
-    const units = Math.floor(receipt.cents / 500);
-    desired += units * rate;
+    if (receipt.cents >= 500) desired += (receipt.cents * rate) / 500;
   }
   ledger(
     s,
     {
       teamId,
       category: "giving",
-      points: desired - prior,
+      points: precisePoints(desired - prior),
       source,
       rule: r.id,
       ruleRevision: r.revision,
       quantity: eligible.reduce(
-        (n, receipt) => n + Math.floor(receipt.cents / 500),
+        (n, receipt) => n + (receipt.cents >= 500 ? receipt.cents / 500 : 0),
         0,
       ),
       day: eventDay(now),
       operator,
-      reason: "Verified donations, complete $5 units per donation",
+      reason:
+        "Verified donations, proportional points with a $5 minimum per donation",
     },
     now,
   );
@@ -535,7 +538,7 @@ export function addDonation(
       operator,
       createdAt: iso(now),
       donationRate: rule(s, "donation").points,
-      donationPolicy: 2,
+      donationPolicy: 3,
       reference: input.reference,
       sequence: s.receipts.length,
     });
@@ -969,9 +972,11 @@ export function standings(s: State) {
     .map((t) => {
       const entries = s.ledger.filter((e) => e.teamId === t.id);
       const sum = (category: Category) =>
-        entries
-          .filter((e) => e.category === category)
-          .reduce((sum, e) => sum + e.points, 0);
+        precisePoints(
+          entries
+            .filter((e) => e.category === category)
+            .reduce((sum, e) => sum + e.points, 0),
+        );
       return {
         ...t,
         ticketPoints: sum("tickets"),
@@ -979,7 +984,7 @@ export function standings(s: State) {
         volleyballPoints: sum("activities"),
         eatingCompetitionPoints: sum("eating"),
         bonusPoints: sum("bonuses"),
-        totalPoints: entries.reduce((sum, e) => sum + e.points, 0),
+        totalPoints: precisePoints(entries.reduce((sum, e) => sum + e.points, 0)),
         attendance: admissions.filter((a) => a.teamId === t.id).length,
         lastUpdated:
           entries

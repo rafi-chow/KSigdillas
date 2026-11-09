@@ -108,7 +108,7 @@ test("brother sales, personal money, food, reversal and seller correction reconc
   assert.equal(row(a.id).personallyDonatedCents, 1000);
   assert.equal(
     standings(s).teams.find((t) => t.id === "axo")!.donationPoints,
-    50,
+    70,
   );
   reverseEntry(
     s,
@@ -119,7 +119,7 @@ test("brother sales, personal money, food, reversal and seller correction reconc
   assert.equal(row(a.id).personallyDonatedCents, 700);
   assert.equal(
     standings(s).teams.find((t) => t.id === "axo")!.donationPoints,
-    50,
+    70,
   );
   const food = addEntry(
     s,

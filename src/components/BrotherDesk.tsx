@@ -192,9 +192,8 @@ export function BrotherDesk({ onChange }: { onChange?: () => Promise<void> }) {
       <section className="ops-card">
         <h2>Online donations</h2>
         <p>
-          50 chapter points per complete $5, calculated per donation. Gifts
-          under $5 earn no points. Refunds and disputes update totals
-          automatically.
+          10 chapter points per dollar on donations of $5 or more. Refunds and
+          disputes update totals automatically.
         </p>
         <label>
           Donation status

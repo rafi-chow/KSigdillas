@@ -146,7 +146,7 @@ export function initialState(state: State) {
       revision: 1,
       offlineSalesEnabled: false,
       packetVersion: 1,
-      scoringPolicyVersion: 2,
+      scoringPolicyVersion: 3,
       updatedAt: new Date().toISOString(),
     },
   ];

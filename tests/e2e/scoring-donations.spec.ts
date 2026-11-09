@@ -45,6 +45,10 @@ test("donation panel and rules stay readable at mobile, tablet and desktop sizes
     await expect(
       panel.getByRole("heading", { name: "Make a donation." }),
     ).toBeVisible();
+    await expect(panel).toContainText(
+      "10 points per dollar on donations of $5 or more.",
+    );
+    await expect(panel).not.toContainText("$5 earns 50 points");
     const links = page.getByRole("link", { name: "Donate", exact: true });
     await expect(links).toHaveCount(3);
     for (const link of await links.all()) {
@@ -198,7 +202,7 @@ test("online donation appears in staff report and chapter correction updates pub
     payment_link: donationLinkId,
     payment_intent: `pi_${id}`,
     currency: "usd",
-    amount_total: 1000,
+    amount_total: 700,
     created: Math.floor(Date.now() / 1000),
     total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: 0 },
     line_items: {
@@ -207,7 +211,7 @@ test("online donation appears in staff report and chapter correction updates pub
         {
           quantity: 1,
           currency: "usd",
-          amount_total: 1000,
+          amount_total: 700,
           price: { id: donationPriceId, currency: "usd", unit_amount: null },
         },
       ],
@@ -264,20 +268,20 @@ test("online donation appears in staff report and chapter correction updates pub
           (t: { id: string }) => t.id === "dz",
         ).totalPoints,
     );
-    expect(after).toBe(before + 100);
+    expect(after).toBe(before + 70);
     await page
       .getByRole("combobox", { name: "Donation status", exact: true })
       .selectOption("paid");
     const paid = page.locator(".donation-record").filter({ hasText: id });
     await paid.locator("summary").click();
-    await expect(paid).toContainText("$10.00 · DZ · paid");
+    await expect(paid).toContainText("$7.00 · DZ · paid");
     await paid.screenshot({
       path: `test-results/donation-paid-${info.project.name}.png`,
     });
     fake.refunds.push({
       id: `re_${id}`,
       charge: `ch_${id}`,
-      amount: 1000,
+      amount: 700,
       currency: "usd",
       status: "succeeded",
     } as Stripe.Refund);

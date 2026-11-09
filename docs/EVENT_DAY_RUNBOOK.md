@@ -86,7 +86,7 @@ exceed the verified amount/packages. Keep the report and CSV private.
 - Slap: $2 / 10 points; pie: $2 / 15. Verify money before recording paid activity
   participation. Hanging: 10 points per attempt; no invented dollar charge.
 - Monetary donations are recorded separately from tickets and paid activities.
-  Each verified donation earns 50 points per complete $5. Under $5 earns no points; $5 earns 50, $10 earns 100, and $7 earns 50. Separate gifts never pool their remainders. Online gifts import automatically after Stripe confirms payment; do not enter them again as manual receipts. Choose a chapter at checkout for chapter credit. No chapter means funds only.
+  Verified donations of $5 or more earn 10 points per dollar, including cents proportionally. Gifts under $5 earn no points and never pool to reach the minimum. Online gifts import automatically after Stripe confirms payment; do not enter them again as manual receipts. Choose a chapter at checkout for chapter credit. No chapter means funds only.
 - Stories earn 25; reels/feed posts earn 50. Verify both required Instagram tags
   and evidence; a post cannot be credited again as another format.
 - Monday: use four labeled sorority boxes. Reconcile accepted whole retail packages

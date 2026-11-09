@@ -42,7 +42,7 @@ export type Receipt = {
   operator: string;
   createdAt: string;
   reversedAt?: string;
-  donationRate?: number;
+  donationRate?: number; // Historical rate snapshot in points per $5.
   donationPolicy?: number;
   reference?: string;
   providerSessionId?: string;

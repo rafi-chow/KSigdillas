@@ -6,4 +6,4 @@ This keeps event information accessible and makes donating available immediately
 
 Six focused Chromium/mobile WebKit checks passed against the compiled production build over isolated HTTPS. Tests cover all ticket destinations, donation navigation, event scrolling, keyboard focus, no horizontal overflow, homepage accessibility and legacy checkout redirects. Hero screenshots at 320/375/390/430/768/1280/1440 pixels were captured; mobile and desktop images were visually inspected. Lint and the production build passed. No payment or database change was required.
 
-[Mobile preview](images/hero-donate-mobile-2026-11-08.png). Deployment verification is recorded after publication.
+[Mobile preview](images/hero-donate-mobile-2026-11-08.png). Published as Netlify deployment `6af0cf742b58fca657bc6bb5` from commit `33c14a7`. Live Chromium and WebKit checks at 390 and 1440 pixels confirmed three donation links, two primary hero actions, no overflow or client errors, 11 working assets and a healthy strict monitoring response.
